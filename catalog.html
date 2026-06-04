@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0c0c0e">
+  <title>Catálogo de productos | CedrickStore</title>
+  <meta name="description" content="Explora el catálogo completo de CedrickStore. Filtra por precio, categoría, marca, popularidad y disponibilidad. Productos premium con envío rápido.">
+  <link rel="canonical" href="https://cedrickstore.com/catalog.html">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c9a227'/%3E%3Ctext x='16' y='23' font-family='Poppins,sans-serif' font-size='20' font-weight='800' text-anchor='middle' fill='%23151515'%3EC%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-page="catalog">
+  <main>
+    <div class="page-head">
+      <div class="container">
+        <nav class="breadcrumb"><a href="index.html">Inicio</a><span class="sep">/</span><span id="crumbCat">Catálogo</span></nav>
+        <h1 id="catalogTitle">Catálogo de productos</h1>
+      </div>
+    </div>
+
+    <div class="container section--tight">
+      <div class="catalog-layout">
+        <!-- FILTROS -->
+        <aside class="filters-panel" id="filtersPanel">
+          <div class="between" style="margin-bottom:6px">
+            <h3 style="font-size:1.1rem">Filtros</h3>
+            <button class="btn btn-ghost btn-sm" id="clearFilters">Limpiar</button>
+            <button class="modal-close hidden" id="closeFilters" style="display:none">✕</button>
+          </div>
+
+          <div class="filter-group">
+            <h4>Precio</h4>
+            <div class="range-row">
+              <input type="number" class="input" id="priceMin" placeholder="Mín" min="0">
+              <span class="muted">—</span>
+              <input type="number" class="input" id="priceMax" placeholder="Máx" min="0">
+            </div>
+            <input type="range" class="range-slider" id="priceRange" min="0" max="2000000" step="10000">
+            <div class="muted" style="font-size:.82rem;margin-top:4px">Hasta <span id="priceRangeVal">$2.000.000</span></div>
+          </div>
+
+          <div class="filter-group">
+            <h4>Categoría</h4>
+            <div id="filterCats"></div>
+          </div>
+
+          <div class="filter-group">
+            <h4>Marca</h4>
+            <div id="filterBrands"></div>
+          </div>
+
+          <div class="filter-group">
+            <h4>Calificación</h4>
+            <div id="filterRating"></div>
+          </div>
+
+          <div class="filter-group">
+            <h4>Disponibilidad</h4>
+            <label class="check"><input type="checkbox" id="fInStock"> Solo en stock</label>
+            <label class="check"><input type="checkbox" id="fOnSale"> En oferta</label>
+          </div>
+
+          <a href="#" class="btn btn-gold btn-block mt-16" id="applyFiltersMobile" style="display:none">Ver resultados</a>
+        </aside>
+
+        <!-- RESULTADOS -->
+        <div>
+          <div class="toolbar">
+            <button class="btn btn-outline btn-sm filters-toggle" id="openFilters"><span class="ico"></span> Filtros</button>
+            <span class="count" id="resultCount">Cargando...</span>
+            <div class="row gap-12" style="align-items:center">
+              <select class="select" id="sortSelect" style="width:auto;height:42px">
+                <option value="relevance">Relevancia</option>
+                <option value="popular">Más vendidos</option>
+                <option value="price-asc">Precio: menor a mayor</option>
+                <option value="price-desc">Precio: mayor a menor</option>
+                <option value="rating">Mejor calificados</option>
+                <option value="discount">Mayor descuento</option>
+                <option value="new">Novedades</option>
+              </select>
+              <div class="view-toggle" id="viewToggle">
+                <button data-view="grid" class="active" aria-label="Cuadrícula"></button>
+                <button data-view="list" aria-label="Lista"></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="product-grid" id="catalogGrid"></div>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/catalog.js"></script>
+</body>
+</html>

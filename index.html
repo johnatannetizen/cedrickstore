@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0c0c0e">
+  <title>CedrickStore — Tienda Online Premium | Tecnología, Relojes, Moda y más</title>
+  <meta name="description" content="CedrickStore: tienda online premium con productos seleccionados de tecnología, relojes, audio, moda, hogar y belleza. Envío rápido, pago seguro y pedidos por WhatsApp.">
+  <meta name="keywords" content="tienda online, comprar online, tecnología, relojes, audio, moda, hogar, belleza, premium, ofertas, Colombia">
+  <meta name="author" content="CedrickStore">
+  <link rel="canonical" href="https://cedrickstore.com/">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="CedrickStore — Tienda Online Premium">
+  <meta property="og:description" content="Productos premium seleccionados a mano. Tecnología, relojes, moda y más con envío rápido y pedidos por WhatsApp.">
+  <meta property="og:locale" content="es_CO">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c9a227'/%3E%3Ctext x='16' y='23' font-family='Poppins,sans-serif' font-size='20' font-weight='800' text-anchor='middle' fill='%23151515'%3EC%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"Store","name":"CedrickStore","description":"Tienda online premium de tecnología, relojes, moda, hogar y belleza.","telephone":"+573016515466","address":{"@type":"PostalAddress","addressLocality":"Medellín","addressCountry":"CO"},"priceRange":"$$"}
+  </script>
+</head>
+<body data-page="home">
+
+  <main>
+    <!-- HERO / SLIDER -->
+    <section class="hero section--tight">
+      <div class="container">
+        <div class="slider" id="heroSlider" aria-label="Promociones destacadas">
+          <div class="slides" id="heroSlides"></div>
+          <button class="slider-arrow prev" id="heroPrev" aria-label="Anterior"></button>
+          <button class="slider-arrow next" id="heroNext" aria-label="Siguiente"></button>
+          <div class="slider-dots" id="heroDots"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="container">
+      <div class="feature-row reveal" id="featureRow"></div>
+    </section>
+
+    <!-- CATEGORÍAS -->
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Explora</span>
+            <h2 class="section-title">Categorías destacadas</h2>
+          </div>
+          <a href="catalog.html" class="link-more">Ver todo</a>
+        </div>
+        <div class="cat-grid stagger" id="catGrid"></div>
+      </div>
+    </section>
+
+    <!-- MÁS VENDIDOS -->
+    <section class="section" style="padding-top:0">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Lo más querido</span>
+            <h2 class="section-title">Productos más vendidos</h2>
+            <p class="section-sub">Los favoritos de nuestros clientes este mes.</p>
+          </div>
+          <a href="catalog.html?sort=popular" class="link-more">Ver más</a>
+        </div>
+        <div class="product-grid" id="bestGrid"></div>
+      </div>
+    </section>
+
+    <!-- DEAL BANNER -->
+    <section class="container">
+      <div class="deal-banner reveal">
+        <div>
+          <span class="eyebrow" style="color:var(--gold-soft)">Oferta relámpago</span>
+          <h3>Hasta <span class="gold-text">40% OFF</span> en selección premium</h3>
+          <p style="opacity:.8;margin-top:8px">Aprovecha precios exclusivos por tiempo limitado. ¡No te quedes sin el tuyo!</p>
+          <div class="countdown" id="countdown">
+            <div class="cd-box"><b data-cd="d">00</b><span>Días</span></div>
+            <div class="cd-box"><b data-cd="h">00</b><span>Horas</span></div>
+            <div class="cd-box"><b data-cd="m">00</b><span>Min</span></div>
+            <div class="cd-box"><b data-cd="s">00</b><span>Seg</span></div>
+          </div>
+          <a href="catalog.html?filter=sale" class="btn btn-gold btn-lg">Ver ofertas</a>
+        </div>
+        <div class="center" style="font-size:7rem;opacity:.9">🛍️</div>
+      </div>
+    </section>
+
+    <!-- DESTACADOS -->
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Selección Cedrick</span>
+            <h2 class="section-title">Productos destacados</h2>
+          </div>
+          <a href="catalog.html" class="link-more">Ver todo</a>
+        </div>
+        <div class="product-grid" id="featuredGrid"></div>
+      </div>
+    </section>
+
+    <!-- NUEVOS -->
+    <section class="section" style="padding-top:0">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Recién llegados</span>
+            <h2 class="section-title">Productos nuevos</h2>
+          </div>
+          <a href="catalog.html?sort=new" class="link-more">Ver novedades</a>
+        </div>
+        <div class="product-grid" id="newGrid"></div>
+      </div>
+    </section>
+
+    <!-- OFERTAS -->
+    <section class="section" style="padding-top:0">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Ahorra más</span>
+            <h2 class="section-title">Ofertas especiales</h2>
+          </div>
+          <a href="catalog.html?filter=sale" class="link-more">Ver todas</a>
+        </div>
+        <div class="product-grid" id="saleGrid"></div>
+      </div>
+    </section>
+
+    <!-- TESTIMONIOS -->
+    <section class="section" style="background:var(--bg-alt)">
+      <div class="container">
+        <div class="section-head" style="justify-content:center;text-align:center;flex-direction:column;align-items:center">
+          <span class="eyebrow">Testimonios</span>
+          <h2 class="section-title">Lo que dicen nuestros clientes</h2>
+        </div>
+        <div class="testi-grid stagger" id="testiGrid"></div>
+      </div>
+    </section>
+
+    <!-- MARCAS -->
+    <section class="section">
+      <div class="container">
+        <div class="section-head" style="justify-content:center;text-align:center;flex-direction:column;align-items:center">
+          <span class="eyebrow">Confían en nosotros</span>
+          <h2 class="section-title">Marcas asociadas</h2>
+        </div>
+        <div class="brand-strip stagger" id="brandStrip"></div>
+      </div>
+    </section>
+
+    <!-- NEWSLETTER -->
+    <section class="container" style="padding-bottom:32px">
+      <div class="newsletter reveal">
+        <h3>Suscríbete y obtén <span style="color:var(--gold-soft)">10% OFF</span></h3>
+        <p>Recibe ofertas exclusivas, lanzamientos y descuentos directo en tu correo.</p>
+        <form id="newsletterForm">
+          <input type="email" placeholder="Tu correo electrónico" required aria-label="Correo">
+          <button class="btn btn-gold btn-lg" type="submit">Suscribirme</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>
