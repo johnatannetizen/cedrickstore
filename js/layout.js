@@ -17,6 +17,13 @@
     { label: 'Contacto', href: 'index.html#contacto', page: 'contact' }
   ];
 
+  const S = () => CS.settings();
+  function brandLogo() {
+    const s = S(); const b = s.brand || {};
+    const mark = (s.logo || 'assets/logo-mark.svg');
+    return `<span class="logo-mark"><img src="${mark}" alt="${escapeHtml((b.name1 || '') + (b.name2 || ''))}" width="42" height="42"></span><span class="logo-text">${escapeHtml(b.name1 || '')}<span>${escapeHtml(b.name2 || '')}</span>${b.tagline ? '<small>' + escapeHtml(b.tagline) + '</small>' : ''}</span>`;
+  }
+
   /* ---------------- HEADER ---------------- */
   function buildHeader() {
     const navLinks = NAV.map(n => `<a href="${n.href}" class="${n.page === PAGE ? 'active' : ''}">${n.label}</a>`).join('');
@@ -25,9 +32,9 @@
     header.innerHTML = `
     <div class="topbar">
       <div class="container">
-        <span>${icon('truck')} Envío gratis en compras desde $300.000</span>
+        <span>${icon('truck')} ${escapeHtml(S().topbar)}</span>
         <div class="topbar-links">
-          <a href="https://wa.me/${CS.WHATSAPP_NUMBER}" target="_blank">${icon('whatsapp')} +57 301 651 5466</a>
+          <a href="https://wa.me/${CS.WHATSAPP_NUMBER}" target="_blank">${icon('whatsapp')} ${escapeHtml(S().contact.phone)}</a>
           <a href="account.html">Mi cuenta</a>
           <a href="admin.html">Admin</a>
         </div>
@@ -36,10 +43,7 @@
     <header class="site-header" id="siteHeader">
       <div class="container header-inner">
         <button class="icon-btn hamburger hide-lg" id="btnMenu" aria-label="Abrir menú"><span></span><span></span><span></span></button>
-        <a href="index.html" class="logo" aria-label="CedrickStore inicio">
-          <span class="logo-mark">C</span>
-          <span class="logo-text">Cedrick<span>Store</span><small>PREMIUM</small></span>
-        </a>
+        <a href="index.html" class="logo" aria-label="${escapeHtml(CS.STORE_NAME)} inicio">${brandLogo()}</a>
         <nav class="main-nav">${navLinks}</nav>
         <div class="search-wrap">
           <span class="ico-search">${CS.ICONS.search}</span>
@@ -73,7 +77,7 @@
       <div class="drawer-overlay" id="drawerOverlay"></div>
       <aside class="mobile-drawer" id="mobileDrawer" aria-label="Menú móvil">
         <div class="between mb-16">
-          <a href="index.html" class="logo"><span class="logo-mark">C</span><span class="logo-text">Cedrick<span>Store</span></span></a>
+          <a href="index.html" class="logo">${brandLogo()}</a>
           <button class="modal-close" id="drawerClose" aria-label="Cerrar">${CS.ICONS.close}</button>
         </div>
         <div class="search-wrap" style="display:block;max-width:none;margin-bottom:8px">
@@ -96,6 +100,7 @@
 
   /* ---------------- FOOTER ---------------- */
   function buildFooter() {
+    const s = S();
     const cats = CS.categories().slice(0, 6).map(c => `<li><a href="catalog.html?cat=${c.id}">${escapeHtml(c.name)}</a></li>`).join('');
     const f = document.createElement('footer');
     f.className = 'site-footer footer';
@@ -104,13 +109,13 @@
       <div class="container">
         <div class="footer-top">
           <div class="footer-col footer-about">
-            <a href="index.html" class="logo"><span class="logo-mark">C</span><span class="logo-text">Cedrick<span>Store</span></span></a>
-            <p>Tu tienda premium de productos seleccionados. Calidad, diseño y la mejor experiencia de compra con entrega rápida y pago seguro.</p>
+            <a href="index.html" class="logo">${brandLogo()}</a>
+            <p>${escapeHtml(s.footerAbout)}</p>
             <div class="social-row">
-              <a href="#" aria-label="Facebook">${CS.ICONS.facebook}</a>
-              <a href="#" aria-label="Instagram">${CS.ICONS.instagram}</a>
-              <a href="#" aria-label="Twitter X">${CS.ICONS.twitter}</a>
-              <a href="#" aria-label="YouTube">${CS.ICONS.youtube}</a>
+              <a href="${s.social.facebook || '#'}" target="_blank" aria-label="Facebook">${CS.ICONS.facebook}</a>
+              <a href="${s.social.instagram || '#'}" target="_blank" aria-label="Instagram">${CS.ICONS.instagram}</a>
+              <a href="${s.social.twitter || '#'}" target="_blank" aria-label="Twitter X">${CS.ICONS.twitter}</a>
+              <a href="${s.social.youtube || '#'}" target="_blank" aria-label="YouTube">${CS.ICONS.youtube}</a>
               <a href="https://wa.me/${CS.WHATSAPP_NUMBER}" target="_blank" aria-label="WhatsApp">${CS.ICONS.whatsapp}</a>
             </div>
             <div class="pay-methods">
@@ -133,17 +138,17 @@
           </div>
           <div class="footer-col">
             <h5>Contacto</h5>
-            <div class="contact-line">${CS.ICONS.pin}<span>Cra. 45 #10-30, Medellín, Colombia</span></div>
-            <div class="contact-line">${CS.ICONS.phone}<span>+57 301 651 5466</span></div>
-            <div class="contact-line">${CS.ICONS.mail}<span>hola@cedrickstore.com</span></div>
-            <div class="contact-line">${CS.ICONS.clock}<span>Lun - Sáb: 8:00 - 20:00</span></div>
+            <div class="contact-line">${CS.ICONS.pin}<span>${escapeHtml(s.contact.address)}</span></div>
+            <div class="contact-line">${CS.ICONS.phone}<span>${escapeHtml(s.contact.phone)}</span></div>
+            <div class="contact-line">${CS.ICONS.mail}<span>${escapeHtml(s.contact.email)}</span></div>
+            <div class="contact-line">${CS.ICONS.clock}<span>${escapeHtml(s.contact.hours)}</span></div>
             <div class="footer-map">
-              <iframe title="Ubicación CedrickStore" loading="lazy" src="https://www.google.com/maps?q=Medellin,Colombia&output=embed"></iframe>
+              <iframe title="Ubicación ${escapeHtml(CS.STORE_NAME)}" loading="lazy" src="https://www.google.com/maps?q=${encodeURIComponent(s.contact.mapQuery || 'Medellin,Colombia')}&output=embed"></iframe>
             </div>
           </div>
         </div>
         <div class="footer-bottom">
-          <span>© ${new Date().getFullYear()} CedrickStore. Todos los derechos reservados.</span>
+          <span>© ${new Date().getFullYear()} ${escapeHtml(CS.STORE_NAME)}. Todos los derechos reservados.</span>
           <div class="fb-links">
             <a href="#" data-policy="privacidad">Privacidad</a>
             <a href="#" data-policy="terminos">Términos</a>

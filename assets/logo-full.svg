@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 100" role="img" aria-label="CedrickStore Premium">
+  <defs>
+    <linearGradient id="lgGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2db82"/>
+      <stop offset=".5" stop-color="#c9a227"/>
+      <stop offset="1" stop-color="#9c7b16"/>
+    </linearGradient>
+  </defs>
+  <!-- Marca -->
+  <rect x="6" y="14" width="72" height="72" rx="20" fill="url(#lgGold)"/>
+  <path d="M58 38 A16 16 0 1 0 58 62" fill="none" stroke="#15151a" stroke-width="8" stroke-linecap="round"/>
+  <path d="M61 30 l5 7 -5 7 -5-7 z" fill="#15151a"/>
+  <!-- Wordmark -->
+  <text x="92" y="54" font-family="Poppins, Montserrat, Arial, sans-serif" font-size="30" font-weight="800" fill="#15151a">Cedrick<tspan fill="#c9a227">Store</tspan></text>
+  <text x="93" y="74" font-family="Montserrat, Arial, sans-serif" font-size="11" letter-spacing="6" font-weight="600" fill="#8a8a94">PREMIUM STORE</text>
+</svg>

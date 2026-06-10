@@ -30,6 +30,8 @@
     const nav = [
       { id: 'dashboard', label: 'Resumen', icon: 'dash' },
       { id: 'orders', label: 'Mis pedidos', icon: 'box' },
+      { id: 'wallet', label: 'Mi monedero', icon: 'money' },
+      { id: 'digital', label: 'Tienda digital', icon: 'chip' },
       { id: 'wishlist', label: 'Favoritos', icon: 'heart' },
       { id: 'addresses', label: 'Direcciones', icon: 'pin' },
       { id: 'profile', label: 'Mi perfil', icon: 'user' }
@@ -59,6 +61,8 @@
     const u = CS.currentUser();
     if (section === 'dashboard') c.innerHTML = dashboard(u);
     else if (section === 'orders') c.innerHTML = ordersView(u);
+    else if (section === 'wallet') c.innerHTML = walletSection(u);
+    else if (section === 'digital') digitalShop(c, u);
     else if (section === 'wishlist') wishlistView(c);
     else if (section === 'addresses') { c.innerHTML = addressesView(u); wireAddresses(); }
     else if (section === 'profile') { c.innerHTML = profileView(u); wireProfile(); }
@@ -141,6 +145,71 @@
     qsa('[data-addr-rm]').forEach(b => b.addEventListener('click', () => {
       const addrs = (u.addresses || []).filter((_, i) => i !== +b.dataset.addrRm);
       CS.updateUser({ addresses: addrs }); renderSection('addresses');
+    }));
+  }
+
+  function walletSection(u) {
+    const balance = CS.walletBalance(u.email);
+    const txs = CS.walletTransactions(u.email);
+    return `
+      <div class="stat-grid" style="grid-template-columns:1fr">
+        <div class="stat-card" style="text-align:center">
+          <div class="sico" style="background:rgba(201,162,39,.15);color:var(--accent);margin:0 auto 10px">${CS.ICONS.money}</div>
+          <h4 style="font-size:2rem;color:var(--accent)">${CS.money(balance)}</h4>
+          <span>Saldo disponible en tu monedero</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h3 class="mb-16">Historial de movimientos</h3>
+        ${txs.length ? `<div class="table-wrap"><table class="data-table">
+          <thead><tr><th>Fecha</th><th>Tipo</th><th>Monto</th><th>Detalle</th></tr></thead>
+          <tbody>${txs.map(t => `<tr>
+            <td>${new Date(t.date).toLocaleDateString('es-CO')}</td>
+            <td><span class="status-pill ${t.type === 'recharge' ? 'done' : 'pending'}">${t.type === 'recharge' ? 'Recarga' : 'Compra'}</span></td>
+            <td><b style="color:${t.amount > 0 ? 'var(--success)' : 'var(--danger)'}">${t.amount > 0 ? '+' : ''}${CS.money(Math.abs(t.amount))}</b></td>
+            <td class="muted">${CS.escapeHtml(t.note || t.reason || '')}</td>
+          </tr>`).join('')}</tbody></table></div>` : '<p class="muted">Aún no tienes movimientos. El administrador puede recargar saldo a tu cuenta.</p>'}
+      </div>`;
+  }
+
+  function digitalShop(c, u) {
+    const list = CS.digitalProducts();
+    const balance = CS.walletBalance(u.email);
+    if (!list.length) { c.innerHTML = '<div class="panel empty-state"><div class="eico">' + CS.ICONS.chip + '</div><h3>Sin productos digitales</h3><p class="muted">El administrador aún no ha agregado productos digitales.</p></div>'; return; }
+    c.innerHTML = `
+      <div class="panel">
+        <div class="between mb-16">
+          <h3>${icon('chip')} Tienda de productos digitales</h3>
+          <span class="gold-text" style="font-weight:700">Saldo: ${CS.money(balance)}</span>
+        </div>
+        <div class="product-grid cols-3" id="digitalGrid">${list.map(dp => `
+          <div class="product-card" style="cursor:default">
+            <div class="pc-media" style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--surface-2),var(--border))">
+              <div style="display:grid;place-items:center;height:100%;font-size:2.5rem;opacity:.6">${CS.ICONS.chip}</div>
+            </div>
+            <div class="pc-body">
+              <h3 class="pc-title">${CS.escapeHtml(dp.name)}</h3>
+              <span class="pc-cat">${CS.escapeHtml(dp.category)} · ${dp.items.length} disponibles</span>
+              ${dp.desc ? '<p class="muted" style="font-size:.82rem">' + CS.escapeHtml(dp.desc) + '</p>' : ''}
+              <div class="pc-price"><span class="price-now">${CS.money(dp.price)}</span></div>
+              <button class="btn btn-gold btn-block btn-sm mt-8" data-buy-dp="${dp.id}" ${dp.items.length === 0 ? 'disabled' : ''}>${dp.items.length === 0 ? 'Agotado' : 'Comprar con monedero'}</button>
+            </div>
+          </div>`).join('')}</div>
+        <div id="purchaseResult" class="mt-16"></div>
+      </div>`;
+    CS.qsa('[data-buy-dp]', c).forEach(b => b.addEventListener('click', () => {
+      const dpId = b.dataset.buyDp;
+      const dp = CS.digitalProductById(dpId);
+      if (!dp) return;
+      if (!confirm('¿Comprar "' + dp.name + '" por ' + CS.money(dp.price) + ' de tu monedero?')) return;
+      const result = CS.purchaseDigitalWithWallet(dpId, u.email);
+      if (result.ok) {
+        CS.toast('Compra exitosa', 'Tu código: ' + result.code, 'success');
+        CS.qs('#purchaseResult', c).innerHTML = '<div class="panel" style="background:rgba(24,165,88,.08);border:1px solid var(--success)"><h4 style="color:var(--success)">Compra exitosa</h4><p class="mt-8">Tu código / producto:</p><code style="display:block;padding:12px;background:var(--surface-2);border-radius:8px;font-size:1.1rem;font-weight:700;margin-top:8px;word-break:break-all">' + CS.escapeHtml(result.code) + '</code><p class="muted mt-8">Guárdalo en un lugar seguro. También puedes verlo en "Mis pedidos".</p></div>';
+        digitalShop(c, u); // refresh
+      } else {
+        CS.toast('Error', result.error, 'error');
+      }
     }));
   }
 

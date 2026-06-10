@@ -7,8 +7,8 @@
 (function () {
   'use strict';
 
-  const WHATSAPP_NUMBER = '573016515466'; // <- número de la tienda (editable)
-  const STORE_NAME = 'CedrickStore';
+  let WHATSAPP_NUMBER = '573016515466'; // <- número de la tienda (editable desde el panel)
+  let STORE_NAME = 'CedrickStore';
   const KEY = {
     products: 'cs_products', categories: 'cs_categories', brands: 'cs_brands',
     coupons: 'cs_coupons', banners: 'cs_banners', testimonials: 'cs_testimonials',
@@ -37,6 +37,53 @@
       store.set(KEY.seeded, true);
       if (force) { CS.toast('Datos restablecidos', 'Catálogo restaurado a los valores originales.', 'success'); }
     }
+  }
+
+  /* =========================================================================
+     CONFIGURACIÓN EDITABLE (branding, textos, colores, tema)
+     Todo se guarda en localStorage (cs_settings) y se aplica en cada página.
+     ========================================================================= */
+  const DEFAULT_SETTINGS = {
+    brand: { name1: 'Cedrick', name2: 'Store', tagline: 'PREMIUM' },
+    logo: '', favicon: '',
+    whatsapp: '573016515466',
+    topbar: 'Envío gratis en compras desde $300.000',
+    defaultTheme: 'auto',
+    footerAbout: 'Tu tienda premium de productos seleccionados. Calidad, diseño y la mejor experiencia de compra con entrega rápida y pago seguro.',
+    contact: { address: 'Cra. 45 #10-30, Medellín, Colombia', phone: '+57 301 651 5466', email: 'hola@cedrickstore.com', hours: 'Lun - Sáb: 8:00 - 20:00', mapQuery: 'Medellin,Colombia' },
+    social: { facebook: '#', instagram: '#', twitter: '#', youtube: '#' },
+    colors: {
+      light: { '--gold': '#c9a227', '--accent': '#b8911f', '--bg': '#f6f6f8', '--surface': '#ffffff', '--ink': '#15151a', '--text': '#15151a' },
+      dark:  { '--accent': '#e6c860', '--bg': '#0c0c0e', '--surface': '#16161c', '--ink': '#15151a', '--text': '#f3f3f6' }
+    }
+  };
+  function deepMerge(base, over) {
+    const out = Array.isArray(base) ? base.slice() : Object.assign({}, base);
+    if (!over) return out;
+    Object.keys(over).forEach(k => {
+      if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k])) out[k] = deepMerge(base[k] || {}, over[k]);
+      else out[k] = over[k];
+    });
+    return out;
+  }
+  function settings() { return deepMerge(DEFAULT_SETTINGS, store.get(KEY.settings, {})); }
+  function saveSettings(patch) { const merged = deepMerge(settings(), patch); store.set(KEY.settings, merged); applySettings(); emit('settings'); return merged; }
+  function resetSettings() { store.del(KEY.settings); applySettings(); emit('settings'); }
+  function applySettings() {
+    const s = settings();
+    WHATSAPP_NUMBER = (s.whatsapp || '573016515466').replace(/\D/g, '');
+    STORE_NAME = (s.brand.name1 || '') + (s.brand.name2 || '');
+    if (window.CS) { window.CS.WHATSAPP_NUMBER = WHATSAPP_NUMBER; window.CS.STORE_NAME = STORE_NAME; }
+    let css = ':root{';
+    Object.entries(s.colors.light || {}).forEach(([k, v]) => { css += k + ':' + v + ';'; });
+    if (s.colors.light['--gold']) css += '--accent-2:' + s.colors.light['--gold'] + ';';
+    css += '}[data-theme="dark"]{';
+    Object.entries(s.colors.dark || {}).forEach(([k, v]) => { css += k + ':' + v + ';'; });
+    css += '}';
+    let st = document.getElementById('cs-custom-theme');
+    if (!st) { st = document.createElement('style'); st.id = 'cs-custom-theme'; (document.head || document.documentElement).appendChild(st); }
+    st.textContent = css;
+    if (s.favicon) { const link = document.querySelector('link[rel="icon"]'); if (link) link.href = s.favicon; }
   }
 
   /* ---------------- Utilidades ---------------- */
@@ -204,8 +251,10 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
   }
   function initTheme() {
     const saved = store.get(KEY.theme);
+    const s = settings();
     const prefers = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    applyTheme(saved || (prefers ? 'dark' : 'light'));
+    const theme = saved || (['light', 'dark'].includes(s.defaultTheme) ? s.defaultTheme : (prefers ? 'dark' : 'light'));
+    document.documentElement.setAttribute('data-theme', theme);
   }
   function toggleTheme() {
     const cur = document.documentElement.getAttribute('data-theme');
@@ -407,10 +456,117 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
     els.forEach(e => io.observe(e));
   }
 
+  /* =========================================================================
+     MONEDERO (WALLET) — Recargas de saldo por el admin
+     ========================================================================= */
+  function walletBalance(email) {
+    if (!email) return 0;
+    const wallets = store.get('cs_wallets', {});
+    return wallets[email.toLowerCase()] || 0;
+  }
+  function walletRecharge(email, amount, note) {
+    if (!email || !amount || amount <= 0) return false;
+    email = email.toLowerCase();
+    const wallets = store.get('cs_wallets', {});
+    wallets[email] = (wallets[email] || 0) + amount;
+    store.set('cs_wallets', wallets);
+    // Registro de transacciones
+    const txs = store.get('cs_wallet_txs', []);
+    txs.unshift({ id: uid('tx_'), email, type: 'recharge', amount, note: note || '', date: Date.now() });
+    store.set('cs_wallet_txs', txs);
+    emit('wallet');
+    return true;
+  }
+  function walletDebit(email, amount, reason) {
+    email = (email || '').toLowerCase();
+    const wallets = store.get('cs_wallets', {});
+    if ((wallets[email] || 0) < amount) return false;
+    wallets[email] -= amount;
+    store.set('cs_wallets', wallets);
+    const txs = store.get('cs_wallet_txs', []);
+    txs.unshift({ id: uid('tx_'), email, type: 'purchase', amount: -amount, reason: reason || '', date: Date.now() });
+    store.set('cs_wallet_txs', txs);
+    emit('wallet');
+    return true;
+  }
+  function walletTransactions(email) {
+    const txs = store.get('cs_wallet_txs', []);
+    return email ? txs.filter(t => t.email === email.toLowerCase()) : txs;
+  }
+
+  /* =========================================================================
+     PRODUCTOS DIGITALES — Base de datos editable con inventario
+     Los productos digitales tienen códigos/licencias/links que se entregan
+     al comprarse y se descuentan del inventario automáticamente.
+     ========================================================================= */
+  const DKEY = 'cs_digital_products';
+  function digitalProducts() { return store.get(DKEY, []); }
+  function digitalProductById(id) { return digitalProducts().find(p => p.id === id); }
+  function saveDigitalProducts(list) { store.set(DKEY, list); emit('digital'); }
+
+  // Agregar un producto digital (admin)
+  function addDigitalProduct(data) {
+    const list = digitalProducts();
+    const dp = {
+      id: data.id || uid('dp_'),
+      name: data.name || '',
+      category: data.category || 'digital',
+      price: +data.price || 0,
+      desc: data.desc || '',
+      // items = array de códigos/licencias/enlaces disponibles para entregar
+      items: data.items || [],
+      sold: data.sold || [],
+      image: data.image || '',
+      createdAt: Date.now()
+    };
+    const i = list.findIndex(x => x.id === dp.id);
+    if (i >= 0) list[i] = dp; else list.push(dp);
+    saveDigitalProducts(list);
+    return dp;
+  }
+
+  // Comprar producto digital: descuenta del inventario y entrega el código
+  function purchaseDigital(dpId, buyerEmail) {
+    const list = digitalProducts();
+    const dp = list.find(x => x.id === dpId);
+    if (!dp) return { ok: false, error: 'Producto no encontrado' };
+    if (!dp.items || dp.items.length === 0) return { ok: false, error: 'Sin stock disponible' };
+    // Tomar el primer ítem disponible
+    const code = dp.items.shift();
+    dp.sold = dp.sold || [];
+    dp.sold.push({ code, buyer: buyerEmail, date: Date.now() });
+    saveDigitalProducts(list);
+    // Registrar pedido
+    const order = createOrder({
+      type: 'digital',
+      customer: { email: buyerEmail, name: buyerEmail },
+      items: [{ id: dp.id, name: dp.name, price: dp.price, qty: 1, code }],
+      totals: { subtotal: dp.price, discount: 0, shipping: 0, total: dp.price },
+      status: 'done',
+      userEmail: buyerEmail
+    });
+    return { ok: true, code, order };
+  }
+
+  // Comprar con monedero
+  function purchaseDigitalWithWallet(dpId, buyerEmail) {
+    const dp = digitalProductById(dpId);
+    if (!dp) return { ok: false, error: 'Producto no encontrado' };
+    if (!dp.items || dp.items.length === 0) return { ok: false, error: 'Sin stock disponible' };
+    if (walletBalance(buyerEmail) < dp.price) return { ok: false, error: 'Saldo insuficiente' };
+    if (!walletDebit(buyerEmail, dp.price, 'Compra: ' + dp.name)) return { ok: false, error: 'Error al debitar saldo' };
+    return purchaseDigital(dpId, buyerEmail);
+  }
+
+  function deleteDigitalProduct(id) {
+    saveDigitalProducts(digitalProducts().filter(x => x.id !== id));
+  }
+
   /* ---------------- API pública ---------------- */
   window.CS = {
     WHATSAPP_NUMBER, STORE_NAME, KEY, store, ICONS, icon,
     seed, money, discountPct, slug, qs, qsa, param, debounce, escapeHtml, uid,
+    settings, saveSettings, resetSettings, applySettings,
     genImage, productImg, stars,
     toast, applyTheme, initTheme, toggleTheme,
     products, categories, brands, coupons, banners, testimonials,
@@ -421,12 +577,16 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
     users, session, currentUser, register, login, logout, updateUser, isAdmin,
     orders, createOrder, updateOrder,
     buildWhatsAppMessage, whatsappUrl, sendWhatsApp,
+    walletBalance, walletRecharge, walletDebit, walletTransactions,
+    digitalProducts, digitalProductById, saveDigitalProducts, addDigitalProduct,
+    purchaseDigital, purchaseDigitalWithWallet, deleteDigitalProduct,
     on, emit, filterProducts, observeLazy, observeReveal
   };
 
   // Inicializa tema y datos lo antes posible
   CS.initTheme();
   CS.seed();
+  CS.applySettings();
 
   // Garantiza la cuenta de administrador demo
   (function ensureAdmin() {

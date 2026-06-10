@@ -46,6 +46,7 @@
     const section = currentSection();
     const nav = [
       { id: 'dashboard', label: 'Dashboard', icon: 'dash' },
+      { id: 'appearance', label: 'Personalización', icon: 'sparkle' },
       { id: 'products', label: 'Productos', icon: 'bag' },
       { id: 'categories', label: 'Categorías', icon: 'tag' },
       { id: 'orders', label: 'Pedidos', icon: 'box' },
@@ -53,6 +54,8 @@
       { id: 'banners', label: 'Banners', icon: 'image' },
       { id: 'promotions', label: 'Promociones', icon: 'tag' },
       { id: 'inventory', label: 'Inventario', icon: 'chip' },
+      { id: 'wallet', label: 'Monedero', icon: 'money' },
+      { id: 'digital', label: 'Prod. digitales', icon: 'tag' },
       { id: 'settings', label: 'Ajustes', icon: 'settings' }
     ];
     root.innerHTML = `
@@ -74,10 +77,191 @@
   function renderSection(s) {
     const c = qs('#adminContent'); if (!c) return;
     ({
-      dashboard, products: productsView, categories: categoriesView, orders: ordersView,
+      dashboard, appearance: appearanceView, products: productsView, categories: categoriesView, orders: ordersView,
       customers: customersView, banners: bannersView, promotions: promotionsView,
-      inventory: inventoryView, settings: settingsView
+      inventory: inventoryView, wallet: walletView, digital: digitalView, settings: settingsView
     }[s] || dashboard)(c);
+  }
+
+  /* ---------- Utilidad: leer archivo como data-uri ---------- */
+  function readFileAsDataURL(file, cb) {
+    if (!file) return;
+    if (file.size > 1.5 * 1024 * 1024) { CS.toast('Imagen muy pesada', 'Usa una imagen menor a 1.5 MB.', 'error'); return; }
+    const fr = new FileReader();
+    fr.onload = () => cb(fr.result);
+    fr.readAsDataURL(file);
+  }
+
+  /* ================= PERSONALIZACIÓN (Apariencia) ================= */
+  function appearanceView(c) {
+    const tab = CS.store.get('cs_admin_appearance_tab', 'brand');
+    c.innerHTML = `
+      <div class="panel">
+        <h3 class="mb-16">${icon('sparkle')} Personalización de la tienda</h3>
+        <div class="tabs" id="appTabs">
+          <button class="tab ${tab === 'brand' ? 'active' : ''}" data-app-tab="brand">Marca y logo</button>
+          <button class="tab ${tab === 'colors' ? 'active' : ''}" data-app-tab="colors">Colores y fondos</button>
+          <button class="tab ${tab === 'texts' ? 'active' : ''}" data-app-tab="texts">Textos y contacto</button>
+          <button class="tab ${tab === 'theme' ? 'active' : ''}" data-app-tab="theme">Tema</button>
+        </div>
+        <div id="appPane"></div>
+      </div>`;
+    qsa('#appTabs [data-app-tab]').forEach(b => b.addEventListener('click', () => {
+      CS.store.set('cs_admin_appearance_tab', b.dataset.appTab);
+      qsa('#appTabs .tab').forEach(x => x.classList.toggle('active', x === b));
+      renderAppPane(b.dataset.appTab);
+    }));
+    renderAppPane(tab);
+  }
+
+  function renderAppPane(tab) {
+    const pane = qs('#appPane'); const s = CS.settings();
+    if (tab === 'brand') {
+      pane.innerHTML = `
+        <form id="brandForm">
+          <div class="form-grid">
+            <div class="field"><label>Nombre (parte 1)</label><input class="input" name="name1" value="${escapeHtml(s.brand.name1)}"></div>
+            <div class="field"><label>Nombre (parte 2 · dorado)</label><input class="input" name="name2" value="${escapeHtml(s.brand.name2)}"></div>
+            <div class="field"><label>Eslogan / subtítulo</label><input class="input" name="tagline" value="${escapeHtml(s.brand.tagline)}"></div>
+            <div class="field"><label>WhatsApp (solo dígitos, con país)</label><input class="input" name="whatsapp" value="${escapeHtml(s.whatsapp)}" placeholder="573016515466"></div>
+          </div>
+          <div class="row gap-24 flex-wrap mt-8">
+            <div>
+              <label style="font-weight:600;font-size:.88rem">Logo (header/footer)</label>
+              <div class="row gap-12" style="align-items:center;margin-top:8px">
+                <span class="logo-mark" style="box-shadow:none;background:var(--surface-2)"><img src="${s.logo || 'assets/logo-mark.svg'}" id="logoPreview" alt="" style="width:56px;height:56px"></span>
+                <button type="button" class="btn btn-outline btn-sm" id="logoUpload">${icon('image')} Subir logo</button>
+                ${s.logo ? '<button type="button" class="btn btn-ghost btn-sm" id="logoRemove">Quitar</button>' : ''}
+                <input type="file" accept="image/*" id="logoFile" hidden>
+              </div>
+            </div>
+            <div>
+              <label style="font-weight:600;font-size:.88rem">Favicon</label>
+              <div class="row gap-12" style="align-items:center;margin-top:8px">
+                <img src="${s.favicon || 'assets/favicon.svg'}" id="favPreview" alt="" style="width:40px;height:40px;border-radius:8px;border:1px solid var(--border)">
+                <button type="button" class="btn btn-outline btn-sm" id="favUpload">${icon('image')} Subir favicon</button>
+                <input type="file" accept="image/*" id="favFile" hidden>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-gold btn-lg mt-24">Guardar marca</button>
+          <p class="muted mt-8" style="font-size:.82rem">Al guardar, la página se recargará para aplicar el logo y los textos.</p>
+        </form>`;
+      let newLogo = null, newFav = null;
+      qs('#logoUpload').addEventListener('click', () => qs('#logoFile').click());
+      qs('#logoFile').addEventListener('change', e => readFileAsDataURL(e.target.files[0], d => { newLogo = d; qs('#logoPreview').src = d; }));
+      qs('#favUpload').addEventListener('click', () => qs('#favFile').click());
+      qs('#favFile').addEventListener('change', e => readFileAsDataURL(e.target.files[0], d => { newFav = d; qs('#favPreview').src = d; }));
+      qs('#logoRemove') && qs('#logoRemove').addEventListener('click', () => { CS.saveSettings({ logo: '' }); CS.toast('Logo restablecido', '', 'info'); setTimeout(() => location.reload(), 500); });
+      qs('#brandForm').addEventListener('submit', e => {
+        e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
+        const patch = { brand: { name1: d.name1, name2: d.name2, tagline: d.tagline }, whatsapp: d.whatsapp.replace(/\D/g, '') };
+        if (newLogo) patch.logo = newLogo;
+        if (newFav) patch.favicon = newFav;
+        CS.saveSettings(patch);
+        CS.toast('Marca actualizada', 'Aplicando cambios...', 'success');
+        setTimeout(() => location.reload(), 650);
+      });
+    }
+
+    else if (tab === 'colors') {
+      const L = s.colors.light, D = s.colors.dark;
+      const sw = (label, group, key, val) => `<div class="field"><label>${label}</label><div class="row gap-8" style="align-items:center"><input type="color" class="color-input" data-group="${group}" data-key="${key}" value="${val}" style="width:54px;height:42px;padding:3px;border-radius:8px;border:1.5px solid var(--border)"><code style="font-size:.82rem;color:var(--muted)">${val}</code></div></div>`;
+      pane.innerHTML = `
+        <p class="muted mb-16">Los cambios se aplican <b>en vivo</b>. Pulsa “Guardar colores” para conservarlos.</p>
+        <h4 class="mb-8">Modo claro</h4>
+        <div class="form-grid">
+          ${sw('Dorado / Marca', 'light', '--gold', L['--gold'])}
+          ${sw('Acento (botones, precios)', 'light', '--accent', L['--accent'])}
+          ${sw('Fondo general', 'light', '--bg', L['--bg'])}
+          ${sw('Tarjetas / superficies', 'light', '--surface', L['--surface'])}
+          ${sw('Color de texto', 'light', '--text', L['--text'])}
+          ${sw('Negro de marca (franjas)', 'light', '--ink', L['--ink'])}
+        </div>
+        <h4 class="mb-8 mt-16">Modo oscuro</h4>
+        <div class="form-grid">
+          ${sw('Acento', 'dark', '--accent', D['--accent'])}
+          ${sw('Fondo general', 'dark', '--bg', D['--bg'])}
+          ${sw('Tarjetas / superficies', 'dark', '--surface', D['--surface'])}
+          ${sw('Color de texto', 'dark', '--text', D['--text'])}
+        </div>
+        <div class="gap-12 row flex-wrap mt-24">
+          <button class="btn btn-gold btn-lg" id="saveColors">Guardar colores</button>
+          <button class="btn btn-outline btn-lg" id="resetColors">Restablecer paleta</button>
+        </div>`;
+      const draft = { light: Object.assign({}, L), dark: Object.assign({}, D) };
+      qsa('.color-input').forEach(inp => inp.addEventListener('input', () => {
+        draft[inp.dataset.group][inp.dataset.key] = inp.value;
+        inp.nextElementSibling.textContent = inp.value;
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if ((inp.dataset.group === 'dark') === isDark) {
+          if (inp.dataset.group === 'light' && inp.dataset.key === '--gold') document.documentElement.style.setProperty('--accent-2', inp.value);
+          document.documentElement.style.setProperty(inp.dataset.key, inp.value);
+        }
+      }));
+      qs('#saveColors').addEventListener('click', () => {
+        CS.saveSettings({ colors: draft });
+        document.documentElement.removeAttribute('style');
+        CS.toast('Colores guardados', 'Tu paleta se aplicó en toda la tienda.', 'success');
+      });
+      qs('#resetColors').addEventListener('click', () => {
+        if (!confirm('¿Restablecer la paleta de colores por defecto?')) return;
+        CS.saveSettings({ colors: { light: { '--gold': '#c9a227', '--accent': '#b8911f', '--bg': '#f6f6f8', '--surface': '#ffffff', '--ink': '#15151a', '--text': '#15151a' }, dark: { '--accent': '#e6c860', '--bg': '#0c0c0e', '--surface': '#16161c', '--ink': '#15151a', '--text': '#f3f3f6' } } });
+        document.documentElement.removeAttribute('style');
+        renderAppPane('colors');
+        CS.toast('Paleta restablecida', '', 'info');
+      });
+    }
+
+    else if (tab === 'texts') {
+      pane.innerHTML = `
+        <form id="textsForm">
+          <div class="field"><label>Mensaje de la barra superior</label><input class="input" name="topbar" value="${escapeHtml(s.topbar)}"></div>
+          <div class="field"><label>Texto “acerca de” (footer)</label><textarea class="textarea" name="footerAbout">${escapeHtml(s.footerAbout)}</textarea></div>
+          <div class="form-grid">
+            <div class="field"><label>Dirección</label><input class="input" name="address" value="${escapeHtml(s.contact.address)}"></div>
+            <div class="field"><label>Teléfono</label><input class="input" name="phone" value="${escapeHtml(s.contact.phone)}"></div>
+            <div class="field"><label>Correo</label><input class="input" name="email" value="${escapeHtml(s.contact.email)}"></div>
+            <div class="field"><label>Horario</label><input class="input" name="hours" value="${escapeHtml(s.contact.hours)}"></div>
+            <div class="field full"><label>Ubicación del mapa (ciudad o dirección)</label><input class="input" name="mapQuery" value="${escapeHtml(s.contact.mapQuery)}"></div>
+          </div>
+          <h4 class="mb-8 mt-8">Redes sociales (URL)</h4>
+          <div class="form-grid">
+            <div class="field"><label>Facebook</label><input class="input" name="facebook" value="${escapeHtml(s.social.facebook)}"></div>
+            <div class="field"><label>Instagram</label><input class="input" name="instagram" value="${escapeHtml(s.social.instagram)}"></div>
+            <div class="field"><label>Twitter / X</label><input class="input" name="twitter" value="${escapeHtml(s.social.twitter)}"></div>
+            <div class="field"><label>YouTube</label><input class="input" name="youtube" value="${escapeHtml(s.social.youtube)}"></div>
+          </div>
+          <button class="btn btn-gold btn-lg mt-8">Guardar textos</button>
+        </form>`;
+      qs('#textsForm').addEventListener('submit', e => {
+        e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
+        CS.saveSettings({
+          topbar: d.topbar, footerAbout: d.footerAbout,
+          contact: { address: d.address, phone: d.phone, email: d.email, hours: d.hours, mapQuery: d.mapQuery },
+          social: { facebook: d.facebook, instagram: d.instagram, twitter: d.twitter, youtube: d.youtube }
+        });
+        CS.toast('Textos actualizados', 'Aplicando cambios...', 'success');
+        setTimeout(() => location.reload(), 650);
+      });
+    }
+
+    else if (tab === 'theme') {
+      pane.innerHTML = `
+        <p class="muted mb-16">Elige el tema con el que se mostrará la tienda por defecto a los visitantes.</p>
+        <div class="gap-12 row flex-wrap">
+          ${['auto', 'light', 'dark'].map(t => `<label class="check" style="border:1.5px solid ${s.defaultTheme === t ? 'var(--accent)' : 'var(--border)'};border-radius:12px;padding:16px 20px;flex:1;min-width:160px"><input type="radio" name="dtheme" value="${t}" ${s.defaultTheme === t ? 'checked' : ''}> <b>${{ auto: 'Automático (según el dispositivo)', light: 'Claro', dark: 'Oscuro' }[t]}</b></label>`).join('')}
+        </div>
+        <button class="btn btn-gold btn-lg mt-24" id="saveTheme">Guardar tema</button>`;
+      qs('#saveTheme').addEventListener('click', () => {
+        const v = (qs('input[name="dtheme"]:checked') || {}).value || 'auto';
+        CS.saveSettings({ defaultTheme: v });
+        if (v === 'auto') CS.store.del(CS.KEY.theme);
+        else CS.applyTheme(v);
+        CS.toast('Tema guardado', 'Se aplicará a los visitantes.', 'success');
+        renderAppPane('theme');
+      });
+    }
   }
 
   /* ================= DASHBOARD ================= */
@@ -167,6 +351,12 @@
         </div>
         <div class="field"><label>Descripción</label><textarea class="textarea" name="desc">${escapeHtml(p.desc || '')}</textarea></div>
         <div class="field"><label>Especificaciones (una por línea: Clave: Valor)</label><textarea class="textarea" name="specs" placeholder="Garantía: 12 meses">${escapeHtml(specsText)}</textarea></div>
+        <div class="field">
+          <label>Imágenes del producto (sube las tuyas o se generan solas)</label>
+          <div id="prodImgs" class="row gap-8 flex-wrap" style="margin-bottom:8px"></div>
+          <button type="button" class="btn btn-outline btn-sm" id="prodImgUpload">${icon('image')} Subir imágenes</button>
+          <input type="file" accept="image/*" multiple id="prodImgFile" hidden>
+        </div>
         <div class="row gap-16 flex-wrap mb-16">
           <label class="check"><input type="checkbox" name="featured" ${p.featured ? 'checked' : ''}> Destacado</label>
           <label class="check"><input type="checkbox" name="isNew" ${p.isNew ? 'checked' : ''}> Nuevo</label>
@@ -174,6 +364,17 @@
         </div>
         <button class="btn btn-gold btn-block btn-lg">${id ? 'Guardar cambios' : 'Crear producto'}</button>
       </form>`, (body) => {
+      const imgs = (p.images || []).slice();
+      const imgsBox = CS.qs('#prodImgs', body);
+      function renderImgs() {
+        imgsBox.innerHTML = imgs.length
+          ? imgs.map((src, idx) => `<div class="compare-thumb"><img src="${src}" alt=""><button type="button" class="x" data-rmimg="${idx}">${CS.ICONS.close}</button></div>`).join('')
+          : '<span class="muted" style="font-size:.82rem">Sin imágenes propias: se generará una imagen con el color elegido.</span>';
+        CS.qsa('[data-rmimg]', imgsBox).forEach(b => b.addEventListener('click', () => { imgs.splice(+b.dataset.rmimg, 1); renderImgs(); }));
+      }
+      renderImgs();
+      CS.qs('#prodImgUpload', body).addEventListener('click', () => CS.qs('#prodImgFile', body).click());
+      CS.qs('#prodImgFile', body).addEventListener('change', ev => { Array.from(ev.target.files || []).forEach(f => readFileAsDataURL(f, d => { imgs.push(d); renderImgs(); })); });
       qs('#prodForm', body).addEventListener('submit', e => {
         e.preventDefault();
         const d = Object.fromEntries(new FormData(e.target));
@@ -182,7 +383,8 @@
         const np = {
           id: p.id, name: d.name, category: d.category, brand: d.brand,
           price: +d.price, oldPrice: d.oldPrice ? +d.oldPrice : null, stock: +d.stock,
-          rating: +d.rating, sold: +d.sold, gallery: +d.gallery, tone: d.tone,
+          rating: +d.rating, sold: +d.sold, gallery: Math.max(+d.gallery || 1, imgs.length || 1), tone: d.tone,
+          images: imgs.slice(),
           desc: d.desc, specs, featured: !!d.featured, isNew: !!d.isNew, bestseller: !!d.bestseller,
           reviews: p.reviews || []
         };
@@ -291,11 +493,23 @@
           <div class="field"><label>Insignia</label><input class="input" name="badge" value="-30%"></div>
           <div class="field"><label>Tono</label><select class="select" name="tone"><option value="gold">Dorado</option><option value="blue">Azul</option><option value="dark">Oscuro</option></select></div>
         </div>
+        <div class="field">
+          <label>Imagen del banner (opcional)</label>
+          <div class="row gap-12" style="align-items:center">
+            <img id="bannerPreview" alt="" style="width:80px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:none">
+            <button type="button" class="btn btn-outline btn-sm" id="bannerImgUpload">${icon('image')} Subir imagen</button>
+            <input type="file" accept="image/*" id="bannerImgFile" hidden>
+          </div>
+        </div>
         <button class="btn btn-gold btn-block">Crear banner</button>
       </form>`, (body) => {
+        let bImg = '';
+        const bUp = CS.qs('#bannerImgUpload', body), bFile = CS.qs('#bannerImgFile', body);
+        bUp && bUp.addEventListener('click', () => bFile.click());
+        bFile && bFile.addEventListener('change', ev => readFileAsDataURL(ev.target.files[0], d => { bImg = d; const pv = CS.qs('#bannerPreview', body); pv.src = d; pv.style.display = 'block'; }));
         qs('#bannerForm', body).addEventListener('submit', e => {
           e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
-          const list = CS.banners(); list.push({ id: uid('b_'), eyebrow: d.eyebrow, title: d.title, text: d.text, cta: d.cta, link: d.link, badge: d.badge, tone: d.tone, icon: 'sparkle' });
+          const list = CS.banners(); list.push({ id: uid('b_'), eyebrow: d.eyebrow, title: d.title, text: d.text, cta: d.cta, link: d.link, badge: d.badge, tone: d.tone, icon: 'sparkle', image: bImg });
           save.banners(list); CS.toast('Banner creado', '', 'success'); closeModal(); renderSection('banners');
         });
       });
@@ -356,12 +570,120 @@
     qsa('[data-stock]').forEach(inp => inp.addEventListener('change', () => { setStock(inp.dataset.stock, parseInt(inp.value.replace(/\D/g, '')) || 0); CS.toast('Stock actualizado', '', 'success'); renderSection('inventory'); }));
   }
 
+  /* ================= MONEDERO (WALLET) — Admin ================= */
+  function walletView(c) {
+    const users = CS.users().filter(u => u.role !== 'admin');
+    const txs = CS.walletTransactions();
+    c.innerHTML = `
+      <div class="panel">
+        <div class="between mb-16"><h3>${icon('money')} Monedero de usuarios</h3><button class="btn btn-gold btn-sm" id="rechargeBtn">${icon('plus')} Recargar saldo</button></div>
+        <p class="muted mb-16">Recarga saldo a cualquier usuario registrado. El saldo se puede usar para comprar productos digitales.</p>
+        <div class="table-wrap"><table class="data-table">
+          <thead><tr><th>Usuario</th><th>Correo</th><th>Saldo actual</th></tr></thead>
+          <tbody>${users.length ? users.map(u => `<tr>
+            <td><b>${escapeHtml(u.name)}</b></td>
+            <td class="muted">${escapeHtml(u.email)}</td>
+            <td><b class="gold-text">${money(CS.walletBalance(u.email))}</b></td>
+          </tr>`).join('') : '<tr><td colspan="3" class="muted">No hay usuarios registrados.</td></tr>'}</tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3 class="mb-16">Historial de transacciones</h3>
+        <div class="table-wrap"><table class="data-table">
+          <thead><tr><th>Fecha</th><th>Usuario</th><th>Tipo</th><th>Monto</th><th>Nota</th></tr></thead>
+          <tbody>${txs.slice(0, 30).map(t => `<tr>
+            <td>${new Date(t.date).toLocaleDateString('es-CO')}</td>
+            <td class="muted">${escapeHtml(t.email)}</td>
+            <td><span class="status-pill ${t.type === 'recharge' ? 'done' : 'pending'}">${t.type === 'recharge' ? 'Recarga' : 'Compra'}</span></td>
+            <td><b style="color:${t.amount > 0 ? 'var(--success)' : 'var(--danger)'}">${t.amount > 0 ? '+' : ''}${money(Math.abs(t.amount))}</b></td>
+            <td class="muted">${escapeHtml(t.note || t.reason || '')}</td>
+          </tr>`).join('') || '<tr><td colspan="5" class="muted">Sin transacciones.</td></tr>'}</tbody>
+        </table></div>
+      </div>`;
+    qs('#rechargeBtn').addEventListener('click', () => {
+      openModal('Recargar saldo', `<form id="rechargeForm">
+        <div class="field"><label>Correo del usuario <span class="req">*</span></label>
+          <select class="select" name="email">${users.map(u => `<option value="${u.email}">${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>`).join('')}</select>
+        </div>
+        <div class="field"><label>Monto a recargar <span class="req">*</span></label><input class="input" type="number" name="amount" min="1" required placeholder="Ej: 50000"></div>
+        <div class="field"><label>Nota (opcional)</label><input class="input" name="note" placeholder="Motivo de la recarga"></div>
+        <button class="btn btn-gold btn-block btn-lg">Recargar</button>
+      </form>`, (body) => {
+        qs('#rechargeForm', body).addEventListener('submit', e => {
+          e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
+          if (CS.walletRecharge(d.email, +d.amount, d.note)) {
+            CS.toast('Recarga exitosa', money(+d.amount) + ' a ' + d.email, 'success');
+            closeModal(); renderSection('wallet');
+          }
+        });
+      });
+    });
+  }
+
+  /* ================= PRODUCTOS DIGITALES — Admin ================= */
+  function digitalView(c) {
+    const list = CS.digitalProducts();
+    c.innerHTML = `
+      <div class="panel">
+        <div class="between mb-16"><h3>${icon('chip')} Productos digitales (${list.length})</h3><button class="btn btn-gold btn-sm" id="newDigital">${icon('plus')} Nuevo producto digital</button></div>
+        <p class="muted mb-16">Crea productos digitales (códigos, licencias, PINs, etc.). Cada vez que un usuario compra, se descuenta un código del inventario automáticamente.</p>
+        <div class="table-wrap"><table class="data-table">
+          <thead><tr><th>Producto</th><th>Precio</th><th>Stock disponible</th><th>Vendidos</th><th>Acciones</th></tr></thead>
+          <tbody>${list.length ? list.map(dp => `<tr>
+            <td><b>${escapeHtml(dp.name)}</b><div class="muted" style="font-size:.76rem">${escapeHtml(dp.category)}</div></td>
+            <td><b>${money(dp.price)}</b></td>
+            <td><span class="status-pill ${dp.items.length === 0 ? 'cancel' : dp.items.length <= 3 ? 'pending' : 'done'}">${dp.items.length} und</span></td>
+            <td>${(dp.sold || []).length}</td>
+            <td><div class="row gap-8">
+              <button class="icon-btn" data-edit-dp="${dp.id}" style="width:34px;height:34px">${CS.ICONS.edit}</button>
+              <button class="icon-btn" data-del-dp="${dp.id}" style="width:34px;height:34px">${CS.ICONS.trash}</button>
+            </div></td>
+          </tr>`).join('') : '<tr><td colspan="5" class="muted">No hay productos digitales. Crea el primero.</td></tr>'}</tbody>
+        </table></div>
+      </div>`;
+    qs('#newDigital').addEventListener('click', () => digitalForm());
+    qsa('[data-edit-dp]').forEach(b => b.addEventListener('click', () => digitalForm(b.dataset.editDp)));
+    qsa('[data-del-dp]').forEach(b => b.addEventListener('click', () => {
+      if (!confirm('¿Eliminar este producto digital?')) return;
+      CS.deleteDigitalProduct(b.dataset.delDp);
+      CS.toast('Producto eliminado', '', 'info'); renderSection('digital');
+    }));
+  }
+
+  function digitalForm(id) {
+    const dp = id ? CS.digitalProductById(id) : { id: '', name: '', category: 'digital', price: 0, desc: '', items: [], image: '' };
+    const itemsText = (dp.items || []).join('\n');
+    openModal(id ? 'Editar producto digital' : 'Nuevo producto digital', `
+      <form id="dpForm">
+        <div class="field"><label>Nombre del producto <span class="req">*</span></label><input class="input" name="name" required value="${escapeHtml(dp.name)}"></div>
+        <div class="form-grid">
+          <div class="field"><label>Categoría</label><input class="input" name="category" value="${escapeHtml(dp.category)}" placeholder="digital, pin, licencia..."></div>
+          <div class="field"><label>Precio <span class="req">*</span></label><input class="input" type="number" name="price" required value="${dp.price}"></div>
+        </div>
+        <div class="field"><label>Descripción</label><textarea class="textarea" name="desc">${escapeHtml(dp.desc)}</textarea></div>
+        <div class="field">
+          <label>Códigos / Licencias / PINs (uno por línea)</label>
+          <textarea class="textarea" name="items" style="min-height:140px;font-family:monospace" placeholder="ABC-123-XYZ&#10;DEF-456-UVW&#10;GHI-789-RST">${escapeHtml(itemsText)}</textarea>
+          <small class="muted">Cada línea es un código que se entregará al comprador. Al venderse, se elimina del inventario.</small>
+        </div>
+        <button class="btn btn-gold btn-block btn-lg">${id ? 'Guardar cambios' : 'Crear producto'}</button>
+      </form>`, (body) => {
+      qs('#dpForm', body).addEventListener('submit', e => {
+        e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
+        const items = (d.items || '').split('\n').map(l => l.trim()).filter(Boolean);
+        CS.addDigitalProduct({ id: dp.id || undefined, name: d.name, category: d.category, price: +d.price, desc: d.desc, items, sold: dp.sold || [], image: dp.image });
+        CS.toast(id ? 'Producto actualizado' : 'Producto creado', d.name, 'success');
+        closeModal(); renderSection('digital');
+      });
+    });
+  }
+
   /* ================= AJUSTES ================= */
   function settingsView(c) {
     c.innerHTML = `<div class="panel" style="max-width:600px">
       <h3 class="mb-16">Ajustes de la tienda</h3>
       <div class="field"><label>Número de WhatsApp para pedidos</label><input class="input" value="${CS.WHATSAPP_NUMBER}" disabled style="opacity:.7"></div>
-      <p class="muted" style="font-size:.82rem">Para cambiar el número, edita la constante <b>WHATSAPP_NUMBER</b> en <b>js/core.js</b>.</p>
+      <p class="muted" style="font-size:.82rem">Cámbialo desde <a href="#appearance" class="gold-text">Personalización → Marca y logo</a>.</p>
       <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
       <h4 class="mb-8">Datos de demostración</h4>
       <p class="muted mb-16">Restablece el catálogo, categorías, marcas y promociones a los valores originales. No borra pedidos ni clientes.</p>

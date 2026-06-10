@@ -31,9 +31,11 @@
             </div>
           </div>
           <div class="slide-figure">
-            <div class="ph" style="aspect-ratio:1;background:linear-gradient(135deg,rgba(201,162,39,.25),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.15);color:#fff">
+            ${b.image
+              ? `<img src="${b.image}" alt="" style="width:100%;max-width:420px;border-radius:var(--radius);aspect-ratio:1;object-fit:cover;box-shadow:0 20px 50px rgba(0,0,0,.35)">`
+              : `<div class="ph" style="aspect-ratio:1;background:linear-gradient(135deg,rgba(201,162,39,.25),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.15);color:#fff">
               <div style="font-size:120px;opacity:.9;display:grid;place-items:center">${CS.ICONS[b.icon] || CS.ICONS.sparkle}</div>
-            </div>
+            </div>`}
             <div class="slide-price-badge">${b.badge.includes('%') ? '<small>HASTA</small><b>' + b.badge + '</b>' : '<b style="font-size:1.1rem">' + b.badge + '</b>'}</div>
           </div>
         </div>
