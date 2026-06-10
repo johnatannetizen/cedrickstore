@@ -12,8 +12,8 @@
   const NAV = [
     { label: 'Inicio', href: 'index.html', page: 'home' },
     { label: 'Catálogo', href: 'catalog.html', page: 'catalog' },
+    { label: 'Digital', href: 'digital.html', page: 'digital' },
     { label: 'Ofertas', href: 'catalog.html?filter=sale', page: 'sale' },
-    { label: 'Novedades', href: 'catalog.html?sort=new', page: 'new' },
     { label: 'Contacto', href: 'index.html#contacto', page: 'contact' }
   ];
 

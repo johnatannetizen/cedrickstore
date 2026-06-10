@@ -149,6 +149,29 @@
     });
   }
 
+  /* ---------------- PRODUCTOS DIGITALES EN HOME ---------------- */
+  function renderDigitalHome() {
+    const grid = qs('#digitalHomeGrid'); if (!grid) return;
+    const list = CS.digitalProducts();
+    if (!list.length) { grid.closest('.section').style.display = 'none'; return; }
+    grid.innerHTML = list.slice(0, 6).map(dp => {
+      const inStock = dp.items && dp.items.length > 0;
+      return `
+        <a href="digital.html" class="product-card" style="text-decoration:none">
+          <div class="pc-media" style="aspect-ratio:16/10;background:linear-gradient(135deg,var(--surface-2),var(--border))">
+            ${dp.image ? `<img src="${dp.image}" alt="${escapeHtml(dp.name)}" style="width:100%;height:100%;object-fit:cover">` : `<div style="display:grid;place-items:center;height:100%;font-size:2.5rem;opacity:.5">${CS.ICONS.chip}</div>`}
+            <div class="pc-tags"><span class="tag tag-new">Digital</span></div>
+          </div>
+          <div class="pc-body">
+            <span class="pc-cat">${escapeHtml(dp.category)}</span>
+            <h3 class="pc-title">${escapeHtml(dp.name)}</h3>
+            <div class="pc-price"><span class="price-now">${money(dp.price)}</span></div>
+            <span class="pc-stock ${inStock ? '' : 'out'}">${inStock ? dp.items.length + ' disponibles' : 'Agotado'}</span>
+          </div>
+        </a>`;
+    }).join('');
+  }
+
   renderSlider();
   renderCountdown();
   renderFeatures();
@@ -157,4 +180,5 @@
   renderTestimonials();
   renderBrands();
   setupNewsletter();
+  renderDigitalHome();
 })();
