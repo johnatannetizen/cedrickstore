@@ -60,13 +60,35 @@
     const c = qs('#acctContent'); if (!c) return;
     const u = CS.currentUser();
     if (section === 'dashboard') c.innerHTML = dashboard(u);
-    else if (section === 'orders') c.innerHTML = ordersView(u);
+    else if (section === 'orders') { c.innerHTML = ordersView(u); wireOrders(); }
     else if (section === 'wallet') c.innerHTML = walletSection(u);
     else if (section === 'digital') digitalShop(c, u);
     else if (section === 'wishlist') wishlistView(c);
     else if (section === 'addresses') { c.innerHTML = addressesView(u); wireAddresses(); }
     else if (section === 'profile') { c.innerHTML = profileView(u); wireProfile(); }
     else c.innerHTML = dashboard(u);
+  }
+
+  function wireOrders() {
+    const u = CS.currentUser(); if (!u) return;
+    CS.qsa('[data-send-order-wa]').forEach(btn => btn.addEventListener('click', () => {
+      const orderId = btn.dataset.sendOrderWa;
+      const o = CS.orders().find(x => x.id === orderId);
+      if (!o) return;
+      // Obtener número del campo o usar el del usuario
+      const recipientInput = CS.qs('#waRecipient');
+      let number = (recipientInput ? recipientInput.value : '').replace(/\D/g, '');
+      if (!number || number.length < 7) {
+        number = (u.phone || '').replace(/\D/g, '');
+        if (!number || number.length < 7) { CS.toast('Sin número', 'Ingresa un número de WhatsApp válido.', 'error'); return; }
+      }
+      // Agregar código de país si no lo tiene
+      if (number.length === 10 && number.startsWith('3')) number = '57' + number;
+      const msg = buildOrderWaMessage(o, u);
+      const url = 'https://wa.me/' + number + '?text=' + encodeURIComponent(msg);
+      window.open(url, '_blank');
+      CS.toast('WhatsApp abierto', 'Enviando pedido #' + o.id, 'success');
+    }));
   }
 
   function myOrders(u) { return CS.orders().filter(o => o.userEmail === u.email); }
@@ -94,15 +116,74 @@
     const orders = myOrders(u);
     if (!orders.length) return `<div class="panel empty-state"><div class="eico">${CS.ICONS.box}</div><h3>Aún no tienes pedidos</h3><p class="muted">Cuando realices tu primer pedido aparecerá aquí.</p><a href="catalog.html" class="btn btn-gold mt-16">Explorar catálogo</a></div>`;
     const statusMap = { pending: ['pending', 'Pendiente'], paid: ['paid', 'Pagado'], ship: ['ship', 'Enviado'], done: ['done', 'Entregado'], cancel: ['cancel', 'Cancelado'] };
-    return `<div class="panel"><h3 class="mb-16">Historial de pedidos</h3><div class="table-wrap"><table class="data-table">
-      <thead><tr><th>Pedido</th><th>Fecha</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead>
-      <tbody>${orders.map(o => { const st = statusMap[o.status] || ['pending', o.status]; return `<tr>
-        <td><b>#${o.id}</b></td>
-        <td>${new Date(o.createdAt).toLocaleDateString('es-CO')}</td>
-        <td>${o.items.reduce((n, i) => n + i.qty, 0)} art.</td>
-        <td><b>${money(o.totals.total)}</b></td>
-        <td><span class="status-pill ${st[0]}">${st[1]}</span></td>
-      </tr>`; }).join('')}</tbody></table></div></div>`;
+
+    const orderCards = orders.map(o => {
+      const st = statusMap[o.status] || ['pending', o.status];
+      const itemsHtml = (o.items || []).map(item => {
+        const isDigital = item.code;
+        return `<div class="row gap-12" style="align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div style="width:40px;height:40px;border-radius:8px;background:var(--surface-2);display:grid;place-items:center;flex-shrink:0;font-size:.9rem">
+            ${isDigital ? CS.ICONS.chip : CS.ICONS.bag}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(item.name)}</div>
+            <div class="muted" style="font-size:.78rem">${item.qty} × ${money(item.price)}${isDigital ? ' · <span class="gold-text">Digital</span>' : ''}</div>
+            ${isDigital ? '<code style="display:block;font-size:.78rem;color:var(--accent);background:var(--surface-2);padding:4px 8px;border-radius:6px;margin-top:4px;word-break:break-all">' + escapeHtml(item.code) + '</code>' : ''}
+          </div>
+          <b style="font-size:.88rem">${money(item.price * item.qty)}</b>
+        </div>`;
+      }).join('');
+
+      // Construir mensaje de WhatsApp para este pedido
+      const waMsg = buildOrderWaMessage(o, u);
+
+      return `<div class="panel" style="margin-bottom:14px">
+        <div class="between flex-wrap" style="gap:8px;margin-bottom:12px">
+          <div>
+            <b style="font-family:var(--font-head);font-size:1.05rem">#${o.id}</b>
+            <span class="muted" style="margin-left:10px;font-size:.82rem">${new Date(o.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+          </div>
+          <span class="status-pill ${st[0]}">${st[1]}</span>
+        </div>
+        <div style="margin-bottom:12px">${itemsHtml}</div>
+        <div class="between flex-wrap" style="gap:8px;padding-top:10px;border-top:1.5px dashed var(--border)">
+          <div>
+            <span class="muted" style="font-size:.85rem">Total:</span>
+            <b class="gold-text" style="font-size:1.1rem;margin-left:6px">${money(o.totals ? o.totals.total : 0)}</b>
+          </div>
+          <div class="row gap-8 flex-wrap">
+            <button class="btn btn-wa btn-sm" data-send-order-wa="${o.id}" title="Enviar detalle por WhatsApp">${icon('whatsapp')} Enviar por WhatsApp</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div>
+      <div class="between mb-16 flex-wrap" style="gap:12px">
+        <h3>Historial de pedidos (${orders.length})</h3>
+        <div class="row gap-8" style="align-items:center">
+          <label class="muted" style="font-size:.82rem;white-space:nowrap">Enviar a WhatsApp:</label>
+          <input class="input" id="waRecipient" placeholder="Número (ej: 573001234567)" value="${escapeHtml(u.phone || '')}" style="width:180px;height:38px;font-size:.85rem">
+        </div>
+      </div>
+      ${orderCards}
+    </div>`;
+  }
+
+  function buildOrderWaMessage(o, u) {
+    let msg = 'Hola, este es el detalle de mi pedido en ' + CS.STORE_NAME + ':\n\n';
+    msg += 'Pedido: #' + o.id + '\n';
+    msg += 'Fecha: ' + new Date(o.createdAt).toLocaleDateString('es-CO') + '\n\n';
+    msg += 'Productos:\n';
+    (o.items || []).forEach(item => {
+      msg += '• ' + item.name + ' x ' + item.qty + ' — ' + CS.money(item.price * item.qty);
+      if (item.code) msg += ' [Código: ' + item.code + ']';
+      msg += '\n';
+    });
+    msg += '\nTotal: ' + CS.money(o.totals ? o.totals.total : 0) + '\n';
+    msg += '\nCliente: ' + (u ? u.name : '') + '\n';
+    msg += 'Correo: ' + (u ? u.email : '') + '\n';
+    return msg;
   }
 
   function wishlistView(c) {
