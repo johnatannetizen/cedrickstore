@@ -275,7 +275,16 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
   /* ---------------- Carrito ---------------- */
   const cart = () => store.get(KEY.cart, []);
   function cartCount() { return cart().reduce((n, i) => n + i.qty, 0); }
-  function cartSubtotal() { return cart().reduce((s, i) => { const p = productById(i.id); return s + (p ? p.price * i.qty : 0); }, 0); }
+  function cartSubtotal() {
+    return cart().reduce((s, i) => {
+      if (i.type === 'digital') {
+        const dp = digitalProductById(i.id);
+        return s + (dp ? dp.price * i.qty : 0);
+      }
+      const p = productById(i.id);
+      return s + (p ? p.price * i.qty : 0);
+    }, 0);
+  }
   function addToCart(id, qty) {
     qty = qty || 1;
     const p = productById(id); if (!p) return;
@@ -297,6 +306,75 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
   }
   function removeFromCart(id) { store.set(KEY.cart, cart().filter(i => i.id !== id)); emit('cart'); }
   function clearCart() { store.set(KEY.cart, []); emit('cart'); }
+
+  /* --- Agregar producto digital al carrito --- */
+  function addDigitalToCart(dpId) {
+    const dp = digitalProductById(dpId);
+    if (!dp) return;
+    if (!dp.items || dp.items.length === 0) { toast('Sin stock', 'Este producto digital está agotado.', 'error'); return; }
+    const c = cart();
+    // Los digitales se marcan con type: 'digital' para diferenciarlos
+    const existing = c.find(i => i.id === dpId && i.type === 'digital');
+    if (existing) {
+      if (existing.qty >= dp.items.length) { toast('Stock limitado', 'No puedes agregar más unidades.', 'error'); return; }
+      existing.qty++;
+    } else {
+      c.push({ id: dpId, qty: 1, type: 'digital' });
+    }
+    store.set(KEY.cart, c);
+    emit('cart');
+    toast('Añadido al carrito', dp.name, 'success');
+  }
+
+  /* --- Pagar items digitales del carrito con monedero --- */
+  function payDigitalWithWallet(email) {
+    if (!email) return { ok: false, error: 'Debes iniciar sesión' };
+    const c = cart();
+    const digitalItems = c.filter(i => i.type === 'digital');
+    if (!digitalItems.length) return { ok: false, error: 'No hay productos digitales en el carrito' };
+    // Calcular total digital
+    let totalDigital = 0;
+    const toDeliver = [];
+    for (const item of digitalItems) {
+      const dp = digitalProductById(item.id);
+      if (!dp) return { ok: false, error: 'Producto "' + item.id + '" no encontrado' };
+      if (!dp.items || dp.items.length < item.qty) return { ok: false, error: 'Stock insuficiente para "' + dp.name + '"' };
+      totalDigital += dp.price * item.qty;
+      toDeliver.push({ dp, qty: item.qty });
+    }
+    // Verificar saldo
+    if (walletBalance(email) < totalDigital) return { ok: false, error: 'Saldo insuficiente. Necesitas ' + money(totalDigital) };
+    // Debitar
+    if (!walletDebit(email, totalDigital, 'Compra digital (' + digitalItems.length + ' items)')) return { ok: false, error: 'Error al debitar saldo' };
+    // Entregar códigos
+    const deliveredCodes = [];
+    const allDigital = digitalProducts();
+    for (const { dp, qty } of toDeliver) {
+      const dpRef = allDigital.find(x => x.id === dp.id);
+      for (let i = 0; i < qty; i++) {
+        const code = dpRef.items.shift();
+        dpRef.sold = dpRef.sold || [];
+        dpRef.sold.push({ code, buyer: email, date: Date.now() });
+        deliveredCodes.push({ name: dp.name, code, price: dp.price });
+      }
+    }
+    saveDigitalProducts(allDigital);
+    // Crear pedido
+    const order = createOrder({
+      type: 'digital',
+      customer: { email, name: email },
+      items: deliveredCodes.map(d => ({ id: d.name, name: d.name, price: d.price, qty: 1, code: d.code })),
+      totals: { subtotal: totalDigital, discount: 0, shipping: 0, total: totalDigital },
+      status: 'done',
+      userEmail: email
+    });
+    // Quitar digitales del carrito (dejar los físicos)
+    const remaining = c.filter(i => i.type !== 'digital');
+    store.set(KEY.cart, remaining);
+    emit('cart');
+    emit('digital');
+    return { ok: true, codes: deliveredCodes, order, email };
+  }
 
   /* ---------------- Cupón activo ---------------- */
   function activeCoupon() { return store.get('cs_active_coupon', null); }
@@ -572,6 +650,7 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
     products, categories, brands, coupons, banners, testimonials,
     productById, categoryName, brandName,
     cart, cartCount, cartSubtotal, addToCart, updateQty, removeFromCart, clearCart,
+    addDigitalToCart, payDigitalWithWallet,
     activeCoupon, applyCoupon, removeCoupon, cartTotals,
     wishlist, inWishlist, toggleWishlist, compare, inCompare, toggleCompare, clearCompare,
     users, session, currentUser, register, login, logout, updateUser, isAdmin,
