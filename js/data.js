@@ -1,271 +1,114 @@
 /* =========================================================================
-   CedrickStore — Datos semilla (totalmente editables)
-   Estos datos se cargan en localStorage la primera vez. Desde el Panel
-   Administrativo puedes crear / editar / eliminar productos, categorías, etc.
-   Para reiniciar a estos valores: Admin → Ajustes → "Restablecer datos".
+   CedrickStore — Datos semilla: TIENDA DE STREAMING
+   Cuentas de streaming, combos y servicios digitales.
    ========================================================================= */
 window.CEDRICK_SEED = (function () {
 
-  /* ---- Categorías (icon = clave de ícono en core.js ICONS) ---- */
   const categories = [
-    { id: 'tecnologia', name: 'Tecnología',  icon: 'chip',    color: '#2f7de1' },
-    { id: 'relojes',    name: 'Relojes',     icon: 'watch',   color: '#c9a227' },
-    { id: 'audio',      name: 'Audio',       icon: 'headset', color: '#9b59f6' },
-    { id: 'moda',       name: 'Moda',        icon: 'shirt',   color: '#e23d44' },
-    { id: 'hogar',      name: 'Hogar',       icon: 'home',    color: '#18a558' },
-    { id: 'belleza',    name: 'Belleza',     icon: 'sparkle', color: '#e0529b' }
+    { id: 'streaming', name: 'Streaming Video', icon: 'chip', color: '#e50914' },
+    { id: 'musica', name: 'Música', icon: 'headset', color: '#1DB954' },
+    { id: 'combos', name: 'Combos', icon: 'box', color: '#c9a227' },
+    { id: 'herramientas', name: 'Herramientas', icon: 'sparkle', color: '#00c4cc' },
+    { id: 'iptv', name: 'IPTV / TV en vivo', icon: 'home', color: '#9b59f6' },
+    { id: 'anime', name: 'Anime', icon: 'star', color: '#f47521' }
   ];
 
-  /* ---- Marcas asociadas ---- */
   const brands = [
-    { id: 'auralux',   name: 'AuraLux' },
-    { id: 'nordico',   name: 'Nórdico' },
-    { id: 'zentech',   name: 'ZenTech' },
-    { id: 'velora',    name: 'Velora' },
-    { id: 'monarch',   name: 'Monarch' },
-    { id: 'pulse',     name: 'Pulse' },
-    { id: 'eterna',    name: 'Eterna' },
-    { id: 'lumiere',   name: 'Lumière' }
+    { id: 'netflix', name: 'Netflix' },
+    { id: 'disney', name: 'Disney+' },
+    { id: 'prime', name: 'Prime Video' },
+    { id: 'hbo', name: 'HBO Max' },
+    { id: 'paramount', name: 'Paramount+' },
+    { id: 'apple', name: 'Apple TV+' },
+    { id: 'crunchyroll', name: 'Crunchyroll' },
+    { id: 'spotify', name: 'Spotify' },
+    { id: 'vix', name: 'ViX' },
+    { id: 'youtube', name: 'YouTube Premium' },
+    { id: 'canva', name: 'Canva Pro' },
+    { id: 'iptv', name: 'IPTV Smarters' },
+    { id: 'plex', name: 'Plex' },
+    { id: 'cedrick', name: 'CedrickStore' }
   ];
 
-  /* ---- Cupones ---- */
   const coupons = [
     { code: 'CEDRICK10', type: 'percent', value: 10, label: '10% de descuento' },
-    { code: 'PREMIUM20', type: 'percent', value: 20, label: '20% de descuento' },
-    { code: 'ENVIOGRATIS', type: 'shipping', value: 0, label: 'Envío gratis' },
-    { code: 'BIENVENIDO', type: 'fixed', value: 30000, label: '$30.000 de descuento' }
+    { code: 'STREAMING20', type: 'percent', value: 20, label: '20% de descuento' },
+    { code: 'BIENVENIDO', type: 'fixed', value: 5000, label: '$5.000 de descuento' }
   ];
 
-  /* ---- Banners / slides del home ---- */
   const banners = [
     {
-      id: 'b1', eyebrow: 'Colección Signature 2026',
-      title: 'Elegancia que <span>define</span> tu estilo',
-      text: 'Descubre piezas premium seleccionadas a mano. Calidad excepcional, diseño atemporal y envío express a todo el país.',
-      cta: 'Explorar colección', link: 'catalog.html', badge: '-40%',
-      tone: 'gold', icon: 'sparkle'
+      id: 'b1', eyebrow: 'Tu entretenimiento premium',
+      title: 'Todas las plataformas de <span>streaming</span> al mejor precio',
+      text: 'Netflix, Disney+, HBO Max, Spotify y mas. Cuentas con garantia de 30 dias. Entrega inmediata por WhatsApp.',
+      cta: 'Ver catalogo', link: 'catalog.html', badge: '-60%',
+      tone: 'dark', icon: 'chip'
     },
     {
-      id: 'b2', eyebrow: 'Tecnología de vanguardia',
-      title: 'Innovación en la <span>palma</span> de tu mano',
-      text: 'Los gadgets más deseados del año con garantía oficial y los mejores precios. Vive la experiencia CedrickStore.',
-      cta: 'Ver tecnología', link: 'catalog.html?cat=tecnologia', badge: 'NEW',
-      tone: 'blue', icon: 'chip'
+      id: 'b2', eyebrow: 'Combos desde $14.000',
+      title: 'Arma tu <span>combo</span> perfecto y ahorra',
+      text: '28 combos disponibles. Netflix + Disney + HBO y mucho mas. 1 pantalla de cada servicio por 30 dias garantizado.',
+      cta: 'Ver combos', link: 'catalog.html?cat=combos', badge: 'TOP',
+      tone: 'gold', icon: 'box'
     },
     {
-      id: 'b3', eyebrow: 'Tiempo de lujo',
-      title: 'Relojes que <span>marcan</span> la diferencia',
-      text: 'Acero, cuero y precisión suiza. Una selección exclusiva para quienes valoran cada segundo.',
-      cta: 'Descubrir relojes', link: 'catalog.html?cat=relojes', badge: 'TOP',
-      tone: 'dark', icon: 'watch'
+      id: 'b3', eyebrow: 'Entrega inmediata',
+      title: 'Paga y recibe tu <span>cuenta</span> al instante',
+      text: 'Pedido por WhatsApp o pago con monedero. Recibe tus credenciales en segundos. Soporte 24/7.',
+      cta: 'Comprar ahora', link: 'digital.html', badge: '24/7',
+      tone: 'blue', icon: 'sparkle'
     }
   ];
 
-  /* ---- Testimonios ---- */
   const testimonials = [
-    { name: 'Laura Martínez', role: 'Cliente verificada', rating: 5, text: 'Compré un reloj y llegó en 24 horas, impecable. El empaque es de lujo y el pedido por WhatsApp fue facilísimo. ¡Volveré a comprar!' },
-    { name: 'Andrés Gómez', role: 'Cliente frecuente', rating: 5, text: 'La calidad de los productos superó mis expectativas. La atención al cliente es excelente y los precios muy competitivos.' },
-    { name: 'Valentina Ríos', role: 'Cliente verificada', rating: 4, text: 'Me encanta el modo oscuro de la tienda y lo fácil que es navegar desde el celular. Encontré justo lo que buscaba.' },
-    { name: 'Sebastián Cruz', role: 'Cliente nuevo', rating: 5, text: 'Pedí unos audífonos premium y el sonido es brutal. El descuento con cupón fue un plus. Recomendado 100%.' }
+    { name: 'Laura M.', role: 'Cliente verificada', rating: 5, text: 'Compre el combo Netflix + Disney y en 2 minutos ya tenia mis cuentas. Funcionan perfecto!' },
+    { name: 'Andres G.', role: 'Cliente frecuente', rating: 5, text: 'Llevo 6 meses comprando aqui. Nunca he tenido problemas. El soporte por WhatsApp es excelente.' },
+    { name: 'Valentina R.', role: 'Cliente verificada', rating: 5, text: 'Los precios son increibles comparado con las suscripciones normales. La cuenta de Spotify funciona genial.' },
+    { name: 'Sebastian C.', role: 'Cliente nuevo', rating: 4, text: 'Pedi HBO Max y me llego al instante. Muy buena atencion y todo funciona bien.' }
   ];
 
-  /* ---- Reseñas reutilizables ---- */
-  const R = (user, rating, text, days) => ({ user, rating, text, date: days });
-
-  /* ---- Productos premium ---- */
-  const products = [
-    {
-      id: 'p01', name: 'Auriculares Inalámbricos AuraLux Pro ANC', category: 'audio', brand: 'auralux',
-      price: 489900, oldPrice: 729900, stock: 18, rating: 4.8, sold: 342, featured: true, isNew: true, bestseller: true,
-      tone: '#9b59f6', desc: 'Auriculares premium con cancelación activa de ruido híbrida, 40 horas de batería y audio Hi-Res certificado. Diseño ergonómico en aluminio anodizado y carga rápida USB-C.',
-      gallery: 4,
-      specs: { 'Conectividad': 'Bluetooth 5.3', 'Batería': '40h (ANC on)', 'Carga': 'USB-C rápida', 'Driver': '40mm Hi-Res', 'Peso': '248 g', 'Garantía': '12 meses' },
-      reviews: [ R('Carlos V.', 5, 'El mejor sonido que he escuchado en este rango de precio. La cancelación de ruido es espectacular.', '2 días'), R('María P.', 5, 'Comodísimos para usar todo el día. La batería dura una eternidad.', '1 semana'), R('Julián R.', 4, 'Excelentes, aunque el estuche podría ser más compacto.', '3 semanas') ]
-    },
-    {
-      id: 'p02', name: 'Smartwatch ZenTech Vision 5 AMOLED', category: 'tecnologia', brand: 'zentech',
-      price: 639900, oldPrice: 899900, stock: 12, rating: 4.7, sold: 287, featured: true, isNew: true, bestseller: true,
-      tone: '#2f7de1', desc: 'Reloj inteligente con pantalla AMOLED de 1.85", GPS dual, monitoreo de SpO2, ECG y más de 120 modos deportivos. Resistencia al agua 5ATM y batería de 14 días.',
-      gallery: 4,
-      specs: { 'Pantalla': '1.85" AMOLED', 'Batería': '14 días', 'GPS': 'Dual banda', 'Resistencia': '5ATM', 'Sensores': 'SpO2 · ECG · HR', 'Garantía': '12 meses' },
-      reviews: [ R('Daniel A.', 5, 'Increíble relación calidad-precio. La pantalla se ve hermosa al sol.', '4 días'), R('Sofía L.', 4, 'Muy completo, el GPS es preciso. Me hubiera gustado más correas incluidas.', '2 semanas') ]
-    },
-    {
-      id: 'p03', name: 'Reloj Automático Monarch Heritage Acero', category: 'relojes', brand: 'monarch',
-      price: 1290000, oldPrice: 1690000, stock: 6, rating: 4.9, sold: 154, featured: true, bestseller: true,
-      tone: '#c9a227', desc: 'Reloj automático de movimiento mecánico con cristal de zafiro antirreflejo, caja de acero inoxidable 316L y brazalete tipo oyster. Reserva de marcha de 42 horas. Una pieza de colección.',
-      gallery: 5,
-      specs: { 'Movimiento': 'Automático mecánico', 'Cristal': 'Zafiro AR', 'Caja': 'Acero 316L · 41mm', 'Reserva': '42 horas', 'Resistencia': '10ATM', 'Garantía': '24 meses' },
-      reviews: [ R('Ricardo M.', 5, 'Una joya. Se siente de mucha mayor gama que su precio. El peso y acabado son premium.', '1 semana'), R('Felipe T.', 5, 'Recibí muchos cumplidos. El zafiro no se raya y el automático funciona perfecto.', '1 mes') ]
-    },
-    {
-      id: 'p04', name: 'Gafas de Sol Polarizadas Velora Aviator', category: 'moda', brand: 'velora',
-      price: 219900, oldPrice: 319900, stock: 25, rating: 4.6, sold: 412, featured: false, bestseller: true,
-      tone: '#e23d44', desc: 'Gafas estilo aviador con lentes polarizados UV400, montura de titanio ultraligera y estuche de cuero. Protección total contra rayos UVA/UVB con un diseño icónico y atemporal.',
-      gallery: 3,
-      specs: { 'Lentes': 'Polarizados UV400', 'Montura': 'Titanio', 'Protección': 'UVA/UVB 100%', 'Incluye': 'Estuche de cuero', 'Garantía': '6 meses' },
-      reviews: [ R('Natalia C.', 5, 'Súper livianas y elegantes. La polarización es real, ya no me molesta el sol al conducir.', '5 días') ]
-    },
-    {
-      id: 'p05', name: 'Altavoz Bluetooth Pulse Boom 360°', category: 'audio', brand: 'pulse',
-      price: 329900, oldPrice: 449900, stock: 30, rating: 4.5, sold: 256, isNew: true,
-      tone: '#9b59f6', desc: 'Altavoz portátil con sonido envolvente de 360°, 30W de potencia, resistencia IPX7 y 24 horas de reproducción. Empareja dos altavoces para sonido estéreo verdadero.',
-      gallery: 3,
-      specs: { 'Potencia': '30W RMS', 'Batería': '24 horas', 'Resistencia': 'IPX7', 'Conexión': 'Bluetooth 5.2', 'Garantía': '12 meses' },
-      reviews: [ R('Esteban G.', 4, 'Suena muy fuerte para su tamaño. Lo llevo a la piscina sin problema.', '1 semana') ]
-    },
-    {
-      id: 'p06', name: 'Cámara de Acción ZenTech GoMax 4K', category: 'tecnologia', brand: 'zentech',
-      price: 749900, oldPrice: 999900, stock: 9, rating: 4.7, sold: 178, featured: true,
-      tone: '#2f7de1', desc: 'Cámara de acción con grabación 4K60fps, estabilización electrónica de 6 ejes, sumergible hasta 10m sin carcasa y pantalla táctil frontal y trasera.',
-      gallery: 4,
-      specs: { 'Video': '4K @ 60fps', 'Estabilización': 'EIS 6 ejes', 'Sumergible': '10m', 'Pantallas': 'Doble táctil', 'Garantía': '12 meses' },
-      reviews: [ R('Mariana V.', 5, 'La estabilización es de otro nivel. Graba videos cinematográficos.', '2 semanas') ]
-    },
-    {
-      id: 'p07', name: 'Perfume Eterna Noir Eau de Parfum 100ml', category: 'belleza', brand: 'eterna',
-      price: 289900, oldPrice: 389900, stock: 22, rating: 4.8, sold: 521, featured: true, bestseller: true,
-      tone: '#e0529b', desc: 'Fragancia amaderada oriental con notas de bergamota, ámbar y sándalo. Larga duración de hasta 12 horas. Frasco de cristal tallado y empaque de lujo.',
-      gallery: 3,
-      specs: { 'Familia olfativa': 'Amaderada oriental', 'Volumen': '100 ml', 'Duración': 'Hasta 12h', 'Género': 'Unisex', 'Garantía': 'Producto sellado' },
-      reviews: [ R('Camila S.', 5, 'El aroma es adictivo y dura todo el día. Recibo cumplidos constantemente.', '3 días'), R('Andrea M.', 5, 'Empaque de lujo, perfecto para regalo.', '2 semanas') ]
-    },
-    {
-      id: 'p08', name: 'Mochila Antirrobo Nórdico Urban Tech', category: 'moda', brand: 'nordico',
-      price: 199900, oldPrice: 279900, stock: 40, rating: 4.6, sold: 389, bestseller: true,
-      tone: '#e23d44', desc: 'Mochila impermeable con compartimento acolchado para laptop de 15.6", puerto USB de carga, cierres ocultos antirrobo y diseño ergonómico transpirable.',
-      gallery: 3,
-      specs: { 'Capacidad': '22 L', 'Laptop': 'Hasta 15.6"', 'Material': 'Poliéster impermeable', 'Extras': 'Puerto USB', 'Garantía': '12 meses' },
-      reviews: [ R('Juan D.', 5, 'Perfecta para viajar y para la oficina. Muy resistente.', '1 semana') ]
-    },
-    {
-      id: 'p09', name: 'Lámpara Inteligente Lumière Halo RGB', category: 'hogar', brand: 'lumiere',
-      price: 159900, oldPrice: 219900, stock: 35, rating: 4.4, sold: 203, isNew: true,
-      tone: '#18a558', desc: 'Lámpara de mesa con 16 millones de colores, control por app y voz, modos de ambiente y temporizador. Diseño minimalista que ilumina y decora cualquier espacio.',
-      gallery: 3,
-      specs: { 'Colores': '16M RGB', 'Control': 'App · Voz', 'Conexión': 'WiFi 2.4GHz', 'Potencia': '9W LED', 'Garantía': '12 meses' },
-      reviews: [ R('Paula R.', 4, 'Crea un ambiente increíble en mi cuarto. Fácil de configurar.', '5 días') ]
-    },
-    {
-      id: 'p10', name: 'Teclado Mecánico ZenTech Aura RGB', category: 'tecnologia', brand: 'zentech',
-      price: 269900, oldPrice: 359900, stock: 16, rating: 4.7, sold: 167,
-      tone: '#2f7de1', desc: 'Teclado mecánico inalámbrico con switches hot-swap, retroiluminación RGB por tecla, estructura de aluminio y conectividad triple modo (BT/2.4G/USB-C).',
-      gallery: 3,
-      specs: { 'Switches': 'Hot-swap rojos', 'Iluminación': 'RGB per-key', 'Conexión': 'BT · 2.4G · USB-C', 'Layout': '75% en español', 'Garantía': '12 meses' },
-      reviews: [ R('Óscar L.', 5, 'El sonido y feel de las teclas es premium. Se conecta a 3 equipos.', '1 semana') ]
-    },
-    {
-      id: 'p11', name: 'Set de Cuidado Facial Eterna Glow', category: 'belleza', brand: 'eterna',
-      price: 179900, oldPrice: 249900, stock: 28, rating: 4.6, sold: 298, isNew: true,
-      tone: '#e0529b', desc: 'Rutina completa de 4 pasos con ácido hialurónico, vitamina C y niacinamida. Limpiador, sérum, hidratante y protector solar. Ingredientes veganos y cruelty-free.',
-      gallery: 3,
-      specs: { 'Pasos': '4 productos', 'Activos': 'Hialurónico · Vit C', 'Tipo de piel': 'Todo tipo', 'Vegano': 'Sí · Cruelty-free', 'Garantía': 'Producto sellado' },
-      reviews: [ R('Daniela F.', 5, 'Mi piel cambió en dos semanas. Los productos rinden muchísimo.', '2 semanas') ]
-    },
-    {
-      id: 'p12', name: 'Reloj Deportivo Pulse Active GPS', category: 'relojes', brand: 'pulse',
-      price: 379900, oldPrice: 499900, stock: 14, rating: 4.5, sold: 221,
-      tone: '#c9a227', desc: 'Reloj deportivo con GPS integrado, pulsómetro óptico, resistencia 5ATM y batería de 20 días. Ideal para running, ciclismo y natación.',
-      gallery: 3,
-      specs: { 'GPS': 'Integrado', 'Batería': '20 días', 'Resistencia': '5ATM', 'Modos': '90+ deportes', 'Garantía': '12 meses' },
-      reviews: [ R('Tomás B.', 4, 'Perfecto para entrenar. El GPS engancha rápido.', '6 días') ]
-    },
-    {
-      id: 'p13', name: 'Cafetera Espresso Nórdico Barista X', category: 'hogar', brand: 'nordico',
-      price: 859900, oldPrice: 1190000, stock: 7, rating: 4.8, sold: 134, featured: true,
-      tone: '#18a558', desc: 'Cafetera espresso semiautomática con bomba de 20 bares, vaporizador de leche profesional y molinillo integrado. Prepara café de calidad de cafetería en casa.',
-      gallery: 4,
-      specs: { 'Presión': '20 bares', 'Molinillo': 'Integrado', 'Vaporizador': 'Profesional', 'Depósito': '1.8 L', 'Garantía': '24 meses' },
-      reviews: [ R('Lucía H.', 5, 'Hago un espresso espectacular. La espuma de leche queda perfecta.', '1 semana') ]
-    },
-    {
-      id: 'p14', name: 'Zapatillas Urbanas Velora Cloud Run', category: 'moda', brand: 'velora',
-      price: 249900, oldPrice: 339900, stock: 33, rating: 4.5, sold: 367, bestseller: true,
-      tone: '#e23d44', desc: 'Zapatillas con suela de espuma de retorno energético, malla transpirable y diseño versátil para el día a día. Comodidad de nube en cada paso.',
-      gallery: 3,
-      specs: { 'Suela': 'Espuma energética', 'Upper': 'Malla transpirable', 'Peso': '260 g', 'Uso': 'Urbano · Casual', 'Garantía': '6 meses' },
-      reviews: [ R('Mateo R.', 5, 'Comodísimas, las uso todo el día sin cansancio. Buena pinta.', '4 días') ]
-    },
-    {
-      id: 'p15', name: 'Tablet ZenTech Pad 11 Pro 256GB', category: 'tecnologia', brand: 'zentech',
-      price: 1149900, oldPrice: 1499900, stock: 8, rating: 4.7, sold: 96, featured: true, isNew: true,
-      tone: '#2f7de1', desc: 'Tablet con pantalla 2.5K de 11", procesador octa-core, 8GB RAM, 256GB almacenamiento y soporte para lápiz óptico. Perfecta para trabajo y entretenimiento.',
-      gallery: 4,
-      specs: { 'Pantalla': '11" 2.5K 120Hz', 'RAM': '8 GB', 'Almacenamiento': '256 GB', 'Batería': '8000 mAh', 'Garantía': '12 meses' },
-      reviews: [ R('Verónica P.', 5, 'Pantalla preciosa y muy fluida. El lápiz funciona genial para tomar notas.', '2 semanas') ]
-    },
-    {
-      id: 'p16', name: 'Difusor Aromático Lumière Mist', category: 'hogar', brand: 'lumiere',
-      price: 129900, oldPrice: 179900, stock: 45, rating: 4.4, sold: 312,
-      tone: '#18a558', desc: 'Difusor ultrasónico de aromas con luz ambiental de 7 colores, temporizador y apagado automático. Humidifica y perfuma hasta 30m² de forma silenciosa.',
-      gallery: 3,
-      specs: { 'Capacidad': '300 ml', 'Cobertura': '30 m²', 'Luz': '7 colores', 'Modo': 'Ultrasónico silencioso', 'Garantía': '12 meses' },
-      reviews: [ R('Sara M.', 4, 'Relaja mucho el ambiente. La luz es muy bonita de noche.', '1 semana') ]
-    },
-    {
-      id: 'p17', name: 'Power Bank Pulse Charge 20.000 mAh', category: 'tecnologia', brand: 'pulse',
-      price: 139900, oldPrice: 189900, stock: 50, rating: 4.6, sold: 445, bestseller: true,
-      tone: '#2f7de1', desc: 'Batería externa de 20.000 mAh con carga rápida de 22.5W, pantalla digital de nivel, tres salidas y carga inalámbrica. Carga tu teléfono hasta 5 veces.',
-      gallery: 3,
-      specs: { 'Capacidad': '20.000 mAh', 'Carga rápida': '22.5W PD', 'Salidas': 'USB-C · 2x USB-A', 'Inalámbrica': '15W', 'Garantía': '12 meses' },
-      reviews: [ R('Andrés Q.', 5, 'Carga rapidísimo y la pantalla de nivel es muy útil.', '3 días') ]
-    },
-    {
-      id: 'p18', name: 'Bolso de Cuero Monarch Classic Tote', category: 'moda', brand: 'monarch',
-      price: 459900, oldPrice: 629900, stock: 11, rating: 4.8, sold: 142, featured: true,
-      tone: '#e23d44', desc: 'Bolso tote de cuero genuino con acabado a mano, forro interior de algodón, múltiples compartimentos y herrajes dorados. Elegancia que perdura en el tiempo.',
-      gallery: 4,
-      specs: { 'Material': 'Cuero genuino', 'Herrajes': 'Dorados', 'Compartimentos': '3 + bolsillos', 'Hecho': 'A mano', 'Garantía': '12 meses' },
-      reviews: [ R('Isabella G.', 5, 'Calidad de cuero excelente. Es espacioso y se ve carísimo.', '1 semana') ]
-    },
-    {
-      id: 'p19', name: 'Plancha de Cabello Eterna Keratin Pro', category: 'belleza', brand: 'eterna',
-      price: 169900, oldPrice: 229900, stock: 26, rating: 4.5, sold: 276,
-      tone: '#e0529b', desc: 'Plancha de cabello con placas de cerámica y keratina, control de temperatura digital hasta 230°C, calentamiento en 15 segundos y tecnología iónica anti-frizz.',
-      gallery: 3,
-      specs: { 'Placas': 'Cerámica + keratina', 'Temperatura': 'Hasta 230°C', 'Calentamiento': '15 seg', 'Tecnología': 'Iónica', 'Garantía': '12 meses' },
-      reviews: [ R('Manuela T.', 4, 'Deja el cabello liso y brillante. Calienta muy rápido.', '5 días') ]
-    },
-    {
-      id: 'p20', name: 'Reloj Minimalista AuraLux Slim Gold', category: 'relojes', brand: 'auralux',
-      price: 329900, oldPrice: 459900, stock: 19, rating: 4.7, sold: 188, isNew: true, featured: true,
-      tone: '#c9a227', desc: 'Reloj de cuarzo ultradelgado con caja chapada en oro, esfera minimalista y correa de cuero italiano. Diseño elegante para cualquier ocasión.',
-      gallery: 4,
-      specs: { 'Movimiento': 'Cuarzo japonés', 'Caja': 'Chapada oro · 38mm', 'Correa': 'Cuero italiano', 'Resistencia': '3ATM', 'Garantía': '12 meses' },
-      reviews: [ R('Gabriel N.', 5, 'Elegante y delgadísimo. Combina con todo.', '1 semana') ]
-    },
-    {
-      id: 'p21', name: 'Robot Aspirador Nórdico CleanBot Laser', category: 'hogar', brand: 'nordico',
-      price: 989900, oldPrice: 1399900, stock: 5, rating: 4.6, sold: 87, featured: true,
-      tone: '#18a558', desc: 'Robot aspirador con navegación láser LiDAR, mapeo inteligente por app, función de trapeado, succión de 4000Pa y base de autovaciado. Limpieza total sin esfuerzo.',
-      gallery: 4,
-      specs: { 'Succión': '4000 Pa', 'Navegación': 'LiDAR', 'Trapeado': 'Sí', 'Autonomía': '180 min', 'Garantía': '24 meses' },
-      reviews: [ R('Roberto C.', 5, 'Mapea la casa perfecto y limpia solo. Una maravilla.', '2 semanas') ]
-    },
-    {
-      id: 'p22', name: 'Audífonos In-Ear AuraLux Buds Lite', category: 'audio', brand: 'auralux',
-      price: 149900, oldPrice: 209900, stock: 60, rating: 4.4, sold: 523, bestseller: true,
-      tone: '#9b59f6', desc: 'Audífonos in-ear inalámbricos con cancelación de ruido ENC, 30 horas de batería con estuche, controles táctiles y resistencia al sudor IPX5.',
-      gallery: 3,
-      specs: { 'Batería': '30h (con estuche)', 'ENC': 'Llamadas claras', 'Resistencia': 'IPX5', 'Conexión': 'Bluetooth 5.3', 'Garantía': '12 meses' },
-      reviews: [ R('Laura B.', 4, 'Muy buenos por el precio. Perfectos para entrenar.', '4 días') ]
-    },
-    {
-      id: 'p23', name: 'Monitor ZenTech UltraView 27" 2K 165Hz', category: 'tecnologia', brand: 'zentech',
-      price: 1090000, oldPrice: 1449900, stock: 6, rating: 4.8, sold: 78, featured: true, isNew: true,
-      tone: '#2f7de1', desc: 'Monitor IPS de 27" resolución 2K, 165Hz de tasa de refresco, 1ms de respuesta, HDR400 y bordes ultradelgados. Ideal para gaming y trabajo creativo.',
-      gallery: 3,
-      specs: { 'Panel': 'IPS 27" 2K', 'Refresco': '165 Hz', 'Respuesta': '1 ms', 'HDR': 'HDR400', 'Garantía': '36 meses' },
-      reviews: [ R('Cristian D.', 5, 'Imagen nítida y fluidísima. Los colores son geniales para editar.', '1 semana') ]
-    },
-    {
-      id: 'p24', name: 'Difusor de Perfume para Auto Velora Aura', category: 'belleza', brand: 'velora',
-      price: 79900, oldPrice: 119900, stock: 70, rating: 4.3, sold: 401,
-      tone: '#e0529b', desc: 'Ambientador premium para auto con difusión por ventilación, esencias de larga duración y diseño en aluminio. Mantiene tu vehículo con un aroma fresco y elegante.',
-      gallery: 3,
-      specs: { 'Duración': 'Hasta 60 días', 'Material': 'Aluminio', 'Montaje': 'Rejilla de aire', 'Aromas': '3 esencias', 'Garantía': '6 meses' },
-      reviews: [ R('Pedro A.', 4, 'Huele rico y dura bastante. Se ve elegante en el carro.', '1 semana') ]
-    }
+  var products = [
+    { id: 'netflix', name: 'Netflix - 1 Pantalla', category: 'streaming', brand: 'netflix', price: 15000, oldPrice: 45000, stock: 50, rating: 4.9, sold: 892, featured: true, bestseller: true, tone: '#e50914', desc: 'Cuenta de Netflix con 1 pantalla por 30 dias. Miles de peliculas, series y documentales en HD. Perfil propio garantizado.', gallery: 2, specs: { 'Pantallas': '1', 'Calidad': 'HD', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'disney', name: 'Disney+ Star - 1 Pantalla', category: 'streaming', brand: 'disney', price: 15000, oldPrice: 40000, stock: 50, rating: 4.8, sold: 756, featured: true, bestseller: true, tone: '#0063e5', desc: 'Disney+ con Star incluido. 1 pantalla por 30 dias. Disney, Marvel, Star Wars, Pixar y National Geographic.', gallery: 2, specs: { 'Pantallas': '1', 'Contenido': 'Disney + Star', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'prime', name: 'Prime Video - 1 Pantalla TV', category: 'streaming', brand: 'prime', price: 10000, oldPrice: 30000, stock: 50, rating: 4.7, sold: 634, featured: true, bestseller: true, tone: '#00a8e1', desc: 'Amazon Prime Video para TV. 1 pantalla por 30 dias. The Boys, Rings of Power, Jack Ryan y mas.', gallery: 2, specs: { 'Pantallas': '1 (TV)', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'hbo', name: 'HBO Max - 1 Pantalla', category: 'streaming', brand: 'hbo', price: 12000, oldPrice: 35000, stock: 50, rating: 4.8, sold: 543, featured: true, bestseller: true, tone: '#b535f6', desc: 'HBO Max con todo el contenido de HBO, Warner Bros, DC. House of the Dragon, The Last of Us, Succession.', gallery: 2, specs: { 'Pantallas': '1', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'paramount', name: 'Paramount+ - 1 Pantalla', category: 'streaming', brand: 'paramount', price: 8000, oldPrice: 25000, stock: 50, rating: 4.6, sold: 412, bestseller: true, tone: '#0064ff', desc: 'Paramount+ con peliculas y series exclusivas. Yellowstone, Star Trek, South Park, Halo.', gallery: 2, specs: { 'Pantallas': '1', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'crunchyroll', name: 'Crunchyroll - 1 Pantalla', category: 'anime', brand: 'crunchyroll', price: 8000, oldPrice: 22000, stock: 50, rating: 4.7, sold: 398, bestseller: true, tone: '#f47521', desc: 'Crunchyroll Premium. La mayor biblioteca de anime del mundo. Simulcasts, manga y mas.', gallery: 2, specs: { 'Pantallas': '1', 'Contenido': 'Anime + Manga', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'apple', name: 'Apple TV+ - 1 Pantalla', category: 'streaming', brand: 'apple', price: 13000, oldPrice: 35000, stock: 50, rating: 4.7, sold: 287, featured: true, tone: '#333333', desc: 'Apple TV+ con contenido original premium. Ted Lasso, Severance, The Morning Show, Foundation.', gallery: 2, specs: { 'Pantallas': '1', 'Calidad': '4K HDR', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'spotify', name: 'Spotify Premium - 1 Mes', category: 'musica', brand: 'spotify', price: 15000, oldPrice: 35000, stock: 50, rating: 4.9, sold: 1024, featured: true, bestseller: true, tone: '#1DB954', desc: 'Spotify Premium individual por 1 mes. Musica sin anuncios, descarga offline, calidad alta.', gallery: 2, specs: { 'Tipo': 'Individual', 'Sin anuncios': 'Si', 'Offline': 'Si', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'vix', name: 'ViX Premium - 1 Pantalla', category: 'streaming', brand: 'vix', price: 10000, oldPrice: 25000, stock: 50, rating: 4.5, sold: 312, tone: '#ff6b00', desc: 'ViX Premium con contenido latino exclusivo. Novelas, deportes, peliculas y series en espanol.', gallery: 2, specs: { 'Pantallas': '1', 'Contenido': 'Latino', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'youtube', name: 'YouTube Premium - 1 Mes', category: 'streaming', brand: 'youtube', price: 12000, oldPrice: 32000, stock: 50, rating: 4.8, sold: 567, featured: true, bestseller: true, tone: '#ff0000', desc: 'YouTube sin anuncios. Videos sin interrupciones, segundo plano, YouTube Music incluido.', gallery: 2, specs: { 'Sin anuncios': 'Si', 'YouTube Music': 'Incluido', 'Segundo plano': 'Si', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'canva', name: 'Canva Pro - 1 Mes', category: 'herramientas', brand: 'canva', price: 10000, oldPrice: 28000, stock: 50, rating: 4.8, sold: 445, featured: true, tone: '#00c4cc', desc: 'Canva Pro por 1 mes. Disenos ilimitados, plantillas premium, fondos removibles, marca kit.', gallery: 2, specs: { 'Plantillas': 'Ilimitadas', 'Almacenamiento': '100 GB', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'iptv-sm', name: 'IPTV Smarters - 1 Mes', category: 'iptv', brand: 'iptv', price: 15000, oldPrice: 40000, stock: 50, rating: 4.6, sold: 389, featured: true, bestseller: true, tone: '#9b59f6', desc: 'IPTV Smarters Pro con +5000 canales en vivo. Deportes, peliculas, series, novelas. Smart TV, celular, PC.', gallery: 2, specs: { 'Canales': '+5000', 'Deportes': 'Si (incluye PPV)', 'Dispositivos': 'TV, Celular, PC', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'plex', name: 'Plex Premium - 1 Mes', category: 'iptv', brand: 'plex', price: 12000, oldPrice: 30000, stock: 50, rating: 4.5, sold: 234, tone: '#e5a00d', desc: 'Plex Premium. Peliculas y series on demand, TV en vivo, sincronizacion entre dispositivos, hasta 4K.', gallery: 2, specs: { 'Contenido': 'On demand + TV en vivo', 'Calidad': 'Hasta 4K', 'Duracion': '30 dias', 'Garantia': '30 dias', 'Entrega': 'Inmediata' }, reviews: [] },
+    { id: 'combo1', name: 'Combo #1 - Netflix + Disney+ Star', category: 'combos', brand: 'cedrick', price: 23000, oldPrice: 30000, stock: 30, rating: 4.9, sold: 234, featured: true, bestseller: true, tone: '#c9a227', desc: '1 pantalla de Netflix + 1 pantalla de Disney+ Star. 30 dias garantizado.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Disney+ Star': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo2', name: 'Combo #2 - Netflix + Prime Video', category: 'combos', brand: 'cedrick', price: 23000, oldPrice: 30000, stock: 30, rating: 4.8, sold: 198, tone: '#c9a227', desc: '1 pantalla de Netflix + 1 pantalla de Prime Video. 30 dias garantizado.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Prime Video': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo3', name: 'Combo #3 - Netflix + HBO Max', category: 'combos', brand: 'cedrick', price: 20000, oldPrice: 27000, stock: 30, rating: 4.8, sold: 187, tone: '#c9a227', desc: '1 pantalla de Netflix + 1 pantalla de HBO Max. 30 dias garantizado.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'HBO Max': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo4', name: 'Combo #4 - Netflix + Crunchyroll', category: 'combos', brand: 'cedrick', price: 21000, oldPrice: 28000, stock: 30, rating: 4.7, sold: 156, tone: '#c9a227', desc: '1 pantalla de Netflix + 1 pantalla de Crunchyroll. 30 dias garantizado.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Crunchyroll': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo5', name: 'Combo #5 - Netflix + Paramount+', category: 'combos', brand: 'cedrick', price: 20000, oldPrice: 27000, stock: 30, rating: 4.7, sold: 145, tone: '#c9a227', desc: '1 pantalla de Netflix + 1 pantalla de Paramount+. 30 dias garantizado.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Paramount+': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo6', name: 'Combo #6 - Disney+ Star + Prime Video', category: 'combos', brand: 'cedrick', price: 19000, oldPrice: 25000, stock: 30, rating: 4.7, sold: 134, tone: '#c9a227', desc: '1 pantalla de Disney+ Star + 1 pantalla de Prime Video. 30 dias garantizado.', gallery: 2, specs: { 'Disney+ Star': '1 pantalla', 'Prime Video': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo7', name: 'Combo #7 - Disney+ Star + HBO Max', category: 'combos', brand: 'cedrick', price: 16000, oldPrice: 22000, stock: 30, rating: 4.6, sold: 123, tone: '#c9a227', desc: '1 pantalla de Disney+ Star + 1 pantalla de HBO Max. 30 dias garantizado.', gallery: 2, specs: { 'Disney+ Star': '1 pantalla', 'HBO Max': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo8', name: 'Combo #8 - Disney+ Star + Paramount+', category: 'combos', brand: 'cedrick', price: 16000, oldPrice: 22000, stock: 30, rating: 4.6, sold: 112, tone: '#c9a227', desc: '1 pantalla de Disney+ Star + 1 pantalla de Paramount+. 30 dias garantizado.', gallery: 2, specs: { 'Disney+ Star': '1 pantalla', 'Paramount+': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo9', name: 'Combo #9 - Prime Video + HBO Max', category: 'combos', brand: 'cedrick', price: 16000, oldPrice: 22000, stock: 30, rating: 4.7, sold: 145, tone: '#c9a227', desc: '1 pantalla de Prime Video + 1 pantalla de HBO Max. 30 dias garantizado.', gallery: 2, specs: { 'Prime Video': '1 pantalla', 'HBO Max': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo10', name: 'Combo #10 - Prime Video + Paramount+', category: 'combos', brand: 'cedrick', price: 16000, oldPrice: 22000, stock: 30, rating: 4.6, sold: 98, tone: '#c9a227', desc: '1 pantalla de Prime Video + 1 pantalla de Paramount+. 30 dias garantizado.', gallery: 2, specs: { 'Prime Video': '1 pantalla', 'Paramount+': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo11', name: 'Combo #11 - HBO Max + Crunchyroll', category: 'combos', brand: 'cedrick', price: 14000, oldPrice: 20000, stock: 30, rating: 4.6, sold: 89, tone: '#c9a227', desc: '1 pantalla de HBO Max + 1 pantalla de Crunchyroll. 30 dias garantizado.', gallery: 2, specs: { 'HBO Max': '1 pantalla', 'Crunchyroll': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo12', name: 'Combo #12 - Netflix + Disney+ Star + Prime Video', category: 'combos', brand: 'cedrick', price: 32000, oldPrice: 45000, stock: 30, rating: 4.9, sold: 278, featured: true, bestseller: true, tone: '#c9a227', desc: 'Netflix + Disney+ Star + Prime Video. 1 pantalla de cada uno por 30 dias. El combo mas popular.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Disney+ Star': '1 pantalla', 'Prime Video': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo13', name: 'Combo #13 - Netflix + Disney+ Star + HBO Max', category: 'combos', brand: 'cedrick', price: 29000, oldPrice: 40000, stock: 30, rating: 4.8, sold: 198, tone: '#c9a227', desc: 'Netflix + Disney+ Star + HBO Max. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Disney+ Star': '1 pantalla', 'HBO Max': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo14', name: 'Combo #14 - Netflix + Disney+ Star + Crunchyroll', category: 'combos', brand: 'cedrick', price: 30000, oldPrice: 42000, stock: 30, rating: 4.8, sold: 167, tone: '#c9a227', desc: 'Netflix + Disney+ Star + Crunchyroll. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Disney+ Star': '1 pantalla', 'Crunchyroll': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo15', name: 'Combo #15 - Netflix + Prime Video + HBO Max', category: 'combos', brand: 'cedrick', price: 29000, oldPrice: 40000, stock: 30, rating: 4.8, sold: 212, tone: '#c9a227', desc: 'Netflix + Prime Video + HBO Max. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Prime Video': '1 pantalla', 'HBO Max': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo16', name: 'Combo #16 - Netflix + Prime Video + Crunchyroll', category: 'combos', brand: 'cedrick', price: 30000, oldPrice: 42000, stock: 30, rating: 4.7, sold: 145, tone: '#c9a227', desc: 'Netflix + Prime Video + Crunchyroll. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Prime Video': '1 pantalla', 'Crunchyroll': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo17', name: 'Combo #17 - Netflix + Prime Video + Paramount+', category: 'combos', brand: 'cedrick', price: 29000, oldPrice: 38000, stock: 30, rating: 4.7, sold: 134, tone: '#c9a227', desc: 'Netflix + Prime Video + Paramount+. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Prime Video': '1 pantalla', 'Paramount+': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo18', name: 'Combo #18 - Disney+ Star + Prime Video + HBO Max', category: 'combos', brand: 'cedrick', price: 25000, oldPrice: 35000, stock: 30, rating: 4.7, sold: 123, tone: '#c9a227', desc: 'Disney+ Star + Prime Video + HBO Max. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Disney+ Star': '1 pantalla', 'Prime Video': '1 pantalla', 'HBO Max': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo19', name: 'Combo #19 - Disney+ Star + Prime Video + Crunchyroll', category: 'combos', brand: 'cedrick', price: 26000, oldPrice: 36000, stock: 30, rating: 4.6, sold: 98, tone: '#c9a227', desc: 'Disney+ Star + Prime Video + Crunchyroll. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Disney+ Star': '1 pantalla', 'Prime Video': '1 pantalla', 'Crunchyroll': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo20', name: 'Combo #20 - Disney+ Star + HBO Max + ViX', category: 'combos', brand: 'cedrick', price: 22000, oldPrice: 32000, stock: 30, rating: 4.6, sold: 87, tone: '#c9a227', desc: 'Disney+ Star + HBO Max + ViX. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Disney+ Star': '1 pantalla', 'HBO Max': '1 pantalla', 'ViX': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo21', name: 'Combo #21 - HBO Max + ViX + Prime Video', category: 'combos', brand: 'cedrick', price: 22000, oldPrice: 32000, stock: 30, rating: 4.6, sold: 76, tone: '#c9a227', desc: 'HBO Max + ViX + Prime Video. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'HBO Max': '1 pantalla', 'ViX': '1 pantalla', 'Prime Video': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo22', name: 'Combo #22 - Netflix + Disney+ + HBO Max + Prime Video', category: 'combos', brand: 'cedrick', price: 38000, oldPrice: 55000, stock: 30, rating: 4.9, sold: 312, featured: true, bestseller: true, tone: '#c9a227', desc: 'El combo TOP! Netflix + Disney+ Star + HBO Max + Prime Video. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Disney+ Star': '1 pantalla', 'HBO Max': '1 pantalla', 'Prime Video': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo23', name: 'Combo #23 - Netflix + Disney+ + HBO Max + ViX', category: 'combos', brand: 'cedrick', price: 35000, oldPrice: 50000, stock: 30, rating: 4.8, sold: 167, tone: '#c9a227', desc: 'Netflix + Disney+ Star + HBO Max + ViX. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Disney+ Star': '1 pantalla', 'HBO Max': '1 pantalla', 'ViX': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo24', name: 'Combo #24 - Netflix + Prime + HBO Max + Paramount+', category: 'combos', brand: 'cedrick', price: 35000, oldPrice: 48000, stock: 30, rating: 4.8, sold: 156, tone: '#c9a227', desc: 'Netflix + Prime Video + HBO Max + Paramount+. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Prime Video': '1 pantalla', 'HBO Max': '1 pantalla', 'Paramount+': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo25', name: 'Combo #25 - Prime + Disney+ + ViX + Crunchyroll', category: 'combos', brand: 'cedrick', price: 31000, oldPrice: 43000, stock: 30, rating: 4.7, sold: 98, tone: '#c9a227', desc: 'Prime Video + Disney+ Star + ViX + Crunchyroll. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Prime Video': '1 pantalla', 'Disney+ Star': '1 pantalla', 'ViX': '1 pantalla', 'Crunchyroll': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo26', name: 'Combo #26 - Disney+ + HBO Max + Prime + Crunchyroll', category: 'combos', brand: 'cedrick', price: 32000, oldPrice: 45000, stock: 30, rating: 4.7, sold: 89, tone: '#c9a227', desc: 'Disney+ Star + HBO Max + Prime Video + Crunchyroll. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'Disney+ Star': '1 pantalla', 'HBO Max': '1 pantalla', 'Prime Video': '1 pantalla', 'Crunchyroll': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo27', name: 'Combo #27 - HBO Max + ViX + Prime + Crunchyroll', category: 'combos', brand: 'cedrick', price: 28000, oldPrice: 40000, stock: 30, rating: 4.6, sold: 67, tone: '#c9a227', desc: 'HBO Max + ViX + Prime Video + Crunchyroll. 1 pantalla de cada uno por 30 dias.', gallery: 2, specs: { 'HBO Max': '1 pantalla', 'ViX': '1 pantalla', 'Prime Video': '1 pantalla', 'Crunchyroll': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] },
+    { id: 'combo28', name: 'Combo #28 - Netflix + Prime + Crunchyroll + ViX + HBO Max', category: 'combos', brand: 'cedrick', price: 41000, oldPrice: 60000, stock: 30, rating: 4.9, sold: 245, featured: true, bestseller: true, tone: '#c9a227', desc: 'MEGA COMBO! Netflix + Prime Video + Crunchyroll + ViX + HBO Max. 1 pantalla de cada uno por 30 dias. El mejor valor.', gallery: 2, specs: { 'Netflix': '1 pantalla', 'Prime Video': '1 pantalla', 'Crunchyroll': '1 pantalla', 'ViX': '1 pantalla', 'HBO Max': '1 pantalla', 'Duracion': '30 dias', 'Garantia': '30 dias' }, reviews: [] }
   ];
 
   return { categories, brands, coupons, banners, testimonials, products };
