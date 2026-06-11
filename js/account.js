@@ -121,14 +121,19 @@
       const st = statusMap[o.status] || ['pending', o.status];
       const itemsHtml = (o.items || []).map(item => {
         const isDigital = item.code;
+        const hasExpiry = item.expiresAt;
+        const expired = hasExpiry && new Date(item.expiresAt) < Date.now();
+        const expiryDate = hasExpiry ? new Date(item.expiresAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+        const purchaseDate = item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
         return `<div class="row gap-12" style="align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
           <div style="width:40px;height:40px;border-radius:8px;background:var(--surface-2);display:grid;place-items:center;flex-shrink:0;font-size:.9rem">
             ${isDigital ? CS.ICONS.chip : CS.ICONS.bag}
           </div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(item.name)}</div>
-            <div class="muted" style="font-size:.78rem">${item.qty} × ${money(item.price)}${isDigital ? ' · <span class="gold-text">Digital</span>' : ''}</div>
+            <div class="muted" style="font-size:.78rem">${item.qty} × ${money(item.price)}${isDigital ? ' · <span class="gold-text">Digital</span>' : ''}${item.duration ? ' · ' + item.duration + ' días' : ''}</div>
             ${isDigital ? '<code style="display:block;font-size:.78rem;color:var(--accent);background:var(--surface-2);padding:4px 8px;border-radius:6px;margin-top:4px;word-break:break-all">' + escapeHtml(item.code) + '</code>' : ''}
+            ${hasExpiry ? '<div style="font-size:.76rem;margin-top:4px">' + (purchaseDate ? '📅 Comprado: <b>' + purchaseDate + '</b> · ' : '') + (expired ? '<span style="color:var(--danger)">⚠️ Vencido: ' + expiryDate + '</span>' : '✅ Válido hasta: <b>' + expiryDate + '</b>') + '</div>' : ''}
           </div>
           <b style="font-size:.88rem">${money(item.price * item.qty)}</b>
         </div>`;
@@ -178,6 +183,8 @@
     (o.items || []).forEach(item => {
       msg += '• ' + item.name + ' x ' + item.qty + ' — ' + CS.money(item.price * item.qty);
       if (item.code) msg += ' [Código: ' + item.code + ']';
+      if (item.duration) msg += ' [' + item.duration + ' días]';
+      if (item.expiresAt) msg += ' [Vence: ' + new Date(item.expiresAt).toLocaleDateString('es-CO') + ']';
       msg += '\n';
     });
     msg += '\nTotal: ' + CS.money(o.totals ? o.totals.total : 0) + '\n';

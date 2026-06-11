@@ -355,7 +355,10 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
         const code = dpRef.items.shift();
         dpRef.sold = dpRef.sold || [];
         dpRef.sold.push({ code, buyer: email, date: Date.now() });
-        deliveredCodes.push({ name: dp.name, code, price: dp.price });
+        const purchaseDate = Date.now();
+        const duration = dpRef.duration || 30;
+        const expiresAt = purchaseDate + duration * 24 * 60 * 60 * 1000;
+        deliveredCodes.push({ name: dp.name, code, price: dp.price, duration, purchaseDate, expiresAt });
       }
     }
     saveDigitalProducts(allDigital);
@@ -363,7 +366,7 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
     const order = createOrder({
       type: 'digital',
       customer: { email, name: email },
-      items: deliveredCodes.map(d => ({ id: d.name, name: d.name, price: d.price, qty: 1, code: d.code })),
+      items: deliveredCodes.map(d => ({ id: d.name, name: d.name, price: d.price, qty: 1, code: d.code, duration: d.duration, purchaseDate: d.purchaseDate, expiresAt: d.expiresAt })),
       totals: { subtotal: totalDigital, discount: 0, shipping: 0, total: totalDigital },
       status: 'done',
       userEmail: email
@@ -590,6 +593,7 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
       name: data.name || '',
       category: data.category || 'digital',
       price: +data.price || 0,
+      duration: +data.duration || 30,
       desc: data.desc || '',
       // items = array de códigos/licencias/enlaces disponibles para entregar
       items: data.items || [],
@@ -671,7 +675,7 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
   (function ensureAdmin() {
     const list = store.get(KEY.users, []);
     if (!list.find(u => u.email === 'admin@cedrickstore.com')) {
-      list.push({ id: 'u_admin', name: 'Administrador', email: 'admin@cedrickstore.com', pass: 'admin123', phone: '3016515466', role: 'admin', addresses: [], createdAt: Date.now() });
+      list.push({ id: 'u_admin', name: 'Administrador', email: 'admin@cedrickstore.com', pass: 'Cedrick2026', phone: '3016515466', role: 'admin', addresses: [], createdAt: Date.now() });
       store.set(KEY.users, list);
     }
   })();

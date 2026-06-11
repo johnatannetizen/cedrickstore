@@ -229,7 +229,7 @@
             <div class="field"><label>Correo electrónico</label><input type="email" class="input" name="email" required placeholder="tucorreo@email.com"></div>
             <div class="field"><label>Contraseña</label><input type="password" class="input" name="pass" required placeholder="••••••••"></div>
             <button class="btn btn-gold btn-block btn-lg">Iniciar sesión</button>
-            <p class="muted text-center mt-16" style="font-size:.85rem">Demo admin: <b>admin@cedrickstore.com</b> / <b>admin123</b></p>
+            <p class="muted text-center mt-16" style="font-size:.85rem">Admin: <b>admin@cedrickstore.com</b> / <b>Cedrick2026</b></p>
           </form>
           <form id="formRegister" class="auth-form hidden">
             <div class="field"><label>Nombre completo</label><input type="text" class="input" name="name" required placeholder="Tu nombre"></div>

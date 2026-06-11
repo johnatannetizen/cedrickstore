@@ -166,6 +166,7 @@
             <span class="pc-cat">${escapeHtml(dp.category)}</span>
             <h3 class="pc-title">${escapeHtml(dp.name)}</h3>
             <div class="pc-price"><span class="price-now">${money(dp.price)}</span></div>
+            <span class="muted" style="font-size:.72rem">${CS.ICONS.clock} ${dp.duration || 30} días</span>
             <span class="pc-stock ${inStock ? '' : 'out'}">${inStock ? dp.items.length + ' disponibles' : 'Agotado'}</span>
           </div>
         </a>`;

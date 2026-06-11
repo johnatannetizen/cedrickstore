@@ -436,16 +436,27 @@
   function ordersTable(orders) {
     if (!orders.length) return '<p class="muted">No hay pedidos todavía.</p>';
     return `<div class="table-wrap"><table class="data-table">
-      <thead><tr><th>Pedido</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
-      <tbody>${orders.map(o => `<tr>
-        <td><b>#${o.id}</b></td>
-        <td>${escapeHtml(o.customer ? o.customer.name : '—')}<div class="muted" style="font-size:.78rem">${escapeHtml(o.customer ? o.customer.phone : '')}</div></td>
+      <thead><tr><th>Pedido</th><th>Cliente</th><th>Fecha</th><th>Productos</th><th>Total</th><th>Vence</th><th>Estado</th></tr></thead>
+      <tbody>${orders.map(o => {
+        const itemCount = (o.items || []).reduce((n, i) => n + (i.qty || 1), 0);
+        const itemNames = (o.items || []).map(i => escapeHtml(i.name)).join(', ');
+        const hasExpiry = o.items && o.items.some(i => i.expiresAt);
+        const expiry = hasExpiry ? o.items.filter(i => i.expiresAt).map(i => {
+          const exp = new Date(i.expiresAt);
+          const expired = exp < Date.now();
+          return '<span class="status-pill ' + (expired ? 'cancel' : 'done') + '">' + exp.toLocaleDateString('es-CO') + (expired ? ' (Vencido)' : '') + '</span>';
+        }).join(' ') : '<span class="muted">—</span>';
+        return `<tr>
+        <td><b>#${o.id}</b>${o.type === 'digital' ? '<br><span class="tag tag-new" style="font-size:.6rem">Digital</span>' : ''}</td>
+        <td>${escapeHtml(o.customer ? o.customer.name : '—')}<div class="muted" style="font-size:.76rem">${escapeHtml(o.userEmail || (o.customer ? o.customer.email : ''))}</div></td>
         <td>${new Date(o.createdAt).toLocaleDateString('es-CO')}</td>
-        <td><b>${money(o.totals.total)}</b></td>
+        <td><span title="${escapeHtml(itemNames)}">${itemCount} art.</span></td>
+        <td><b>${money(o.totals ? o.totals.total : 0)}</b></td>
+        <td>${expiry}</td>
         <td><select class="select status-sel" data-order="${o.id}" style="height:36px;width:auto;font-size:.82rem">
           ${['pending', 'paid', 'ship', 'done', 'cancel'].map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${{ pending: 'Pendiente', paid: 'Pagado', ship: 'Enviado', done: 'Entregado', cancel: 'Cancelado' }[s]}</option>`).join('')}
         </select></td>
-      </tr>`).join('')}</tbody></table></div>`;
+      </tr>`; }).join('')}</tbody></table></div>`;
   }
   function wireOrderStatus() {
     qsa('.status-sel').forEach(sel => sel.addEventListener('change', () => {
@@ -628,10 +639,11 @@
         <div class="between mb-16"><h3>${icon('chip')} Productos digitales (${list.length})</h3><button class="btn btn-gold btn-sm" id="newDigital">${icon('plus')} Nuevo producto digital</button></div>
         <p class="muted mb-16">Crea productos digitales (códigos, licencias, PINs, etc.). Cada vez que un usuario compra, se descuenta un código del inventario automáticamente.</p>
         <div class="table-wrap"><table class="data-table">
-          <thead><tr><th>Producto</th><th>Precio</th><th>Stock disponible</th><th>Vendidos</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Producto</th><th>Precio</th><th>Duración</th><th>Stock disponible</th><th>Vendidos</th><th>Acciones</th></tr></thead>
           <tbody>${list.length ? list.map(dp => `<tr>
             <td><b>${escapeHtml(dp.name)}</b><div class="muted" style="font-size:.76rem">${escapeHtml(dp.category)}</div></td>
             <td><b>${money(dp.price)}</b></td>
+            <td>${dp.duration || 30} días</td>
             <td><span class="status-pill ${dp.items.length === 0 ? 'cancel' : dp.items.length <= 3 ? 'pending' : 'done'}">${dp.items.length} und</span></td>
             <td>${(dp.sold || []).length}</td>
             <td><div class="row gap-8">
@@ -659,6 +671,7 @@
         <div class="form-grid">
           <div class="field"><label>Categoría</label><input class="input" name="category" value="${escapeHtml(dp.category)}" placeholder="digital, pin, licencia..."></div>
           <div class="field"><label>Precio <span class="req">*</span></label><input class="input" type="number" name="price" required value="${dp.price}"></div>
+          <div class="field"><label>Duración (días)</label><select class="select" name="duration"><option value="30" ${(dp.duration || 30) === 30 ? 'selected' : ''}>30 días</option><option value="60" ${dp.duration === 60 ? 'selected' : ''}>60 días</option><option value="90" ${dp.duration === 90 ? 'selected' : ''}>90 días</option><option value="365" ${dp.duration === 365 ? 'selected' : ''}>365 días</option></select></div>
         </div>
         <div class="field"><label>Descripción</label><textarea class="textarea" name="desc">${escapeHtml(dp.desc)}</textarea></div>
         <div class="field">
@@ -671,7 +684,7 @@
       qs('#dpForm', body).addEventListener('submit', e => {
         e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
         const items = (d.items || '').split('\n').map(l => l.trim()).filter(Boolean);
-        CS.addDigitalProduct({ id: dp.id || undefined, name: d.name, category: d.category, price: +d.price, desc: d.desc, items, sold: dp.sold || [], image: dp.image });
+        CS.addDigitalProduct({ id: dp.id || undefined, name: d.name, category: d.category, price: +d.price, duration: +d.duration, desc: d.desc, items, sold: dp.sold || [], image: dp.image });
         CS.toast(id ? 'Producto actualizado' : 'Producto creado', d.name, 'success');
         closeModal(); renderSection('digital');
       });

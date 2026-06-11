@@ -53,6 +53,7 @@
               <div class="pc-price">
                 <span class="price-now">${money(dp.price)}</span>
               </div>
+              <span class="muted" style="font-size:.76rem">${icon('clock')} Duración: <b>${dp.duration || 30} días</b></span>
               <span class="pc-stock ${inStock ? '' : 'out'}">${inStock ? dp.items.length + ' disponibles' : 'Sin stock'}</span>
               <button class="btn btn-gold btn-block btn-sm mt-8" data-add-digital="${dp.id}" ${!inStock ? 'disabled' : ''}>
                 ${!inStock ? 'Agotado' : icon('cart') + ' Agregar al carrito'}
