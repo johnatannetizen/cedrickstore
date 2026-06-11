@@ -307,6 +307,28 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
   function removeFromCart(id) { store.set(KEY.cart, cart().filter(i => i.id !== id)); emit('cart'); }
   function clearCart() { store.set(KEY.cart, []); emit('cart'); }
 
+  /* --- Extraer código del inventario de un producto del catálogo --- */
+  function deliverProductCode(productId, buyerEmail) {
+    const invData = store.get('cs_product_codes', {});
+    const codes = invData[productId] || { available: [], delivered: [] };
+    if (!codes.available || codes.available.length === 0) return null;
+    const code = codes.available.shift();
+    codes.delivered = codes.delivered || [];
+    codes.delivered.push({ code, buyer: buyerEmail, date: Date.now() });
+    invData[productId] = codes;
+    store.set('cs_product_codes', invData);
+    // Actualizar stock del producto
+    const allProducts = products();
+    const p = allProducts.find(x => x.id === productId);
+    if (p) { p.stock = codes.available.length; store.set(KEY.products, allProducts); }
+    return code;
+  }
+  function getProductCodeCount(productId) {
+    const invData = store.get('cs_product_codes', {});
+    const codes = invData[productId] || { available: [], delivered: [] };
+    return codes.available.length;
+  }
+
   /* --- Agregar producto digital al carrito --- */
   function addDigitalToCart(dpId) {
     const dp = digitalProductById(dpId);
@@ -654,7 +676,7 @@ ${dots ? '<g fill="#ffffff" opacity="0.06">' + Array.from({length:5},(_,i)=>`<ci
     products, categories, brands, coupons, banners, testimonials,
     productById, categoryName, brandName,
     cart, cartCount, cartSubtotal, addToCart, updateQty, removeFromCart, clearCart,
-    addDigitalToCart, payDigitalWithWallet,
+    addDigitalToCart, payDigitalWithWallet, deliverProductCode, getProductCodeCount,
     activeCoupon, applyCoupon, removeCoupon, cartTotals,
     wishlist, inWishlist, toggleWishlist, compare, inCompare, toggleCompare, clearCompare,
     users, session, currentUser, register, login, logout, updateUser, isAdmin,

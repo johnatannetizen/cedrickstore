@@ -577,22 +577,64 @@
     }));
   }
 
-  /* ================= INVENTARIO ================= */
+  /* ================= INVENTARIO (con códigos/credenciales) ================= */
   function inventoryView(c) {
     const list = CS.products();
+    // Leer inventario de códigos guardado por producto
+    const invData = CS.store.get('cs_product_codes', {});
     c.innerHTML = `<div class="panel">
-      <h3 class="mb-16">Gestión de inventario</h3>
-      <p class="muted mb-16">Ajusta el stock directamente. Los cambios se guardan al instante.</p>
-      <div class="table-wrap"><table class="data-table"><thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock actual</th><th></th></tr></thead>
-      <tbody>${list.map(p => `<tr>
-        <td><b>${escapeHtml(p.name)}</b></td><td>${escapeHtml(CS.categoryName(p.category))}</td><td>${money(p.price)}</td>
-        <td><div class="qty-stepper" style="height:38px"><button data-stock-dec="${p.id}" style="height:38px;width:34px">−</button><input type="text" value="${p.stock}" data-stock="${p.id}" style="height:38px;width:48px"><button data-stock-inc="${p.id}" style="height:38px;width:34px">+</button></div></td>
-        <td><span class="status-pill ${p.stock <= 0 ? 'cancel' : p.stock <= 5 ? 'pending' : 'done'}">${p.stock <= 0 ? 'Agotado' : p.stock <= 5 ? 'Bajo' : 'OK'}</span></td>
-      </tr>`).join('')}</tbody></table></div></div>`;
-    const setStock = (id, val) => { const list = CS.products(); const p = list.find(x => x.id === id); if (p) { p.stock = Math.max(0, val); save.products(list); } };
-    qsa('[data-stock-inc]').forEach(b => b.addEventListener('click', () => { const p = CS.productById(b.dataset.stockInc); setStock(p.id, p.stock + 1); renderSection('inventory'); }));
-    qsa('[data-stock-dec]').forEach(b => b.addEventListener('click', () => { const p = CS.productById(b.dataset.stockDec); setStock(p.id, p.stock - 1); renderSection('inventory'); }));
-    qsa('[data-stock]').forEach(inp => inp.addEventListener('change', () => { setStock(inp.dataset.stock, parseInt(inp.value.replace(/\D/g, '')) || 0); CS.toast('Stock actualizado', '', 'success'); renderSection('inventory'); }));
+      <h3 class="mb-16">Gestión de inventario y credenciales</h3>
+      <p class="muted mb-16">Carga los códigos/credenciales de cada producto. Cuando un cliente compra, se le entrega uno automáticamente y se descuenta del inventario.</p>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>Producto</th><th>Precio</th><th>Códigos cargados</th><th>Entregados</th><th>Acciones</th></tr></thead>
+      <tbody>${list.map(p => {
+        const codes = invData[p.id] || { available: [], delivered: [] };
+        return `<tr>
+        <td><b>${escapeHtml(p.name)}</b><div class="muted" style="font-size:.76rem">${escapeHtml(CS.categoryName(p.category))}</div></td>
+        <td>${money(p.price)}</td>
+        <td><span class="status-pill ${codes.available.length === 0 ? 'cancel' : codes.available.length <= 3 ? 'pending' : 'done'}">${codes.available.length} disponibles</span></td>
+        <td class="muted">${codes.delivered.length} vendidos</td>
+        <td><button class="btn btn-gold btn-sm" data-load-codes="${p.id}">${icon('plus')} Cargar códigos</button></td>
+      </tr>`;}).join('')}</tbody></table></div></div>`;
+
+    qsa('[data-load-codes]').forEach(btn => btn.addEventListener('click', () => {
+      const pid = btn.dataset.loadCodes;
+      const p = CS.productById(pid);
+      const invData = CS.store.get('cs_product_codes', {});
+      const codes = invData[pid] || { available: [], delivered: [] };
+      const currentText = codes.available.join('\n');
+
+      openModal('Cargar credenciales: ' + p.name, `
+        <form id="codesForm">
+          <div class="panel" style="background:var(--surface-2);margin-bottom:14px">
+            <div class="row gap-16" style="flex-wrap:wrap">
+              <div><b class="gold-text" style="font-size:1.3rem">${codes.available.length}</b><br><span class="muted" style="font-size:.82rem">Disponibles</span></div>
+              <div><b style="font-size:1.3rem">${codes.delivered.length}</b><br><span class="muted" style="font-size:.82rem">Entregados</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Códigos / Credenciales disponibles (uno por línea)</label>
+            <textarea class="textarea" name="codes" style="min-height:180px;font-family:monospace;font-size:.9rem" placeholder="usuario1@mail.com:clave123&#10;usuario2@mail.com:clave456&#10;XXXX-YYYY-ZZZZ-1111">${escapeHtml(currentText)}</textarea>
+            <small class="muted">Cada línea es una credencial que se entregará al próximo comprador. Puedes poner email:clave, códigos PIN, licencias, etc.</small>
+          </div>
+          ${codes.delivered.length > 0 ? '<details style="margin-bottom:14px"><summary class="muted" style="cursor:pointer;font-size:.85rem">Ver ' + codes.delivered.length + ' códigos ya entregados</summary><div class="panel mt-8" style="background:var(--surface-2);max-height:140px;overflow-y:auto;font-family:monospace;font-size:.82rem">' + codes.delivered.map(d => '<div style="padding:4px 0;border-bottom:1px solid var(--border)"><span class="muted">' + new Date(d.date).toLocaleDateString('es-CO') + '</span> → <b>' + escapeHtml(d.code) + '</b> → ' + escapeHtml(d.buyer || '?') + '</div>').join('') + '</div></details>' : ''}
+          <button class="btn btn-gold btn-block btn-lg">Guardar credenciales</button>
+        </form>`, (body) => {
+        qs('#codesForm', body).addEventListener('submit', e => {
+          e.preventDefault();
+          const d = Object.fromEntries(new FormData(e.target));
+          const newCodes = (d.codes || '').split('\n').map(l => l.trim()).filter(Boolean);
+          const invData = CS.store.get('cs_product_codes', {});
+          invData[pid] = { available: newCodes, delivered: codes.delivered || [] };
+          CS.store.set('cs_product_codes', invData);
+          // Actualizar stock del producto también
+          const allProducts = CS.products();
+          const prod = allProducts.find(x => x.id === pid);
+          if (prod) { prod.stock = newCodes.length; save.products(allProducts); }
+          CS.toast('Credenciales guardadas', newCodes.length + ' códigos disponibles para ' + p.name, 'success');
+          closeModal(); renderSection('inventory');
+        });
+      });
+    }));
   }
 
   /* ================= MONEDERO (WALLET) — Admin ================= */
@@ -677,7 +719,7 @@
   }
 
   function digitalForm(id) {
-    const dp = id ? CS.digitalProductById(id) : { id: '', name: '', category: 'digital', price: 0, desc: '', items: [], image: '' };
+    const dp = id ? CS.digitalProductById(id) : { id: '', name: '', category: 'digital', price: 0, desc: '', items: [], image: '', duration: 30 };
     const itemsText = (dp.items || []).join('\n');
     openModal(id ? 'Editar producto digital' : 'Nuevo producto digital', `
       <form id="dpForm">
@@ -689,16 +731,31 @@
         </div>
         <div class="field"><label>Descripción</label><textarea class="textarea" name="desc">${escapeHtml(dp.desc)}</textarea></div>
         <div class="field">
-          <label>Códigos / Licencias / PINs (uno por línea)</label>
-          <textarea class="textarea" name="items" style="min-height:140px;font-family:monospace" placeholder="ABC-123-XYZ&#10;DEF-456-UVW&#10;GHI-789-RST">${escapeHtml(itemsText)}</textarea>
-          <small class="muted">Cada línea es un código que se entregará al comprador. Al venderse, se elimina del inventario.</small>
+          <label>Imagen del producto</label>
+          <div class="row gap-12" style="align-items:center">
+            <img id="dpImgPreview" src="${dp.image || ''}" alt="" style="width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid var(--border);${dp.image ? '' : 'display:none'}">
+            <button type="button" class="btn btn-outline btn-sm" id="dpImgUpload">${icon('image')} ${dp.image ? 'Cambiar imagen' : 'Subir imagen'}</button>
+            ${dp.image ? '<button type="button" class="btn btn-ghost btn-sm" id="dpImgRemove">Quitar</button>' : ''}
+            <input type="file" accept="image/*" id="dpImgFile" hidden>
+          </div>
+        </div>
+        <div class="field">
+          <label>Códigos / Licencias / Credenciales (uno por línea)</label>
+          <textarea class="textarea" name="items" style="min-height:140px;font-family:monospace" placeholder="usuario@mail.com:clave123&#10;XXXX-YYYY-ZZZZ&#10;PIN-12345">${escapeHtml(itemsText)}</textarea>
+          <small class="muted">Cada línea es una credencial que se entregará al comprador. Al venderse, se elimina del inventario.</small>
         </div>
         <button class="btn btn-gold btn-block btn-lg">${id ? 'Guardar cambios' : 'Crear producto'}</button>
       </form>`, (body) => {
+      let dpImg = dp.image || '';
+      const imgUp = CS.qs('#dpImgUpload', body), imgFile = CS.qs('#dpImgFile', body);
+      imgUp && imgUp.addEventListener('click', () => imgFile.click());
+      imgFile && imgFile.addEventListener('change', ev => readFileAsDataURL(ev.target.files[0], d => { dpImg = d; const pv = CS.qs('#dpImgPreview', body); pv.src = d; pv.style.display = 'block'; }));
+      const rmBtn = CS.qs('#dpImgRemove', body);
+      rmBtn && rmBtn.addEventListener('click', () => { dpImg = ''; CS.qs('#dpImgPreview', body).style.display = 'none'; });
       qs('#dpForm', body).addEventListener('submit', e => {
         e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
         const items = (d.items || '').split('\n').map(l => l.trim()).filter(Boolean);
-        CS.addDigitalProduct({ id: dp.id || undefined, name: d.name, category: d.category, price: +d.price, duration: +d.duration, desc: d.desc, items, sold: dp.sold || [], image: dp.image });
+        CS.addDigitalProduct({ id: dp.id || undefined, name: d.name, category: d.category, price: +d.price, duration: +d.duration, desc: d.desc, items, sold: dp.sold || [], image: dpImg });
         CS.toast(id ? 'Producto actualizado' : 'Producto creado', d.name, 'success');
         closeModal(); renderSection('digital');
       });
