@@ -1,257 +1,164 @@
 /* =========================================================================
    CedrickStore — Carrito (cart.js)
-   Soporta productos físicos y digitales. Opciones de pago:
-   - WhatsApp (físicos)
-   - Monedero (digitales)
-   - Checkout completo
+   TODOS los productos son digitales. Se pagan con monedero o WhatsApp.
+   Al pagar con monedero se entregan los códigos/credenciales al instante.
    ========================================================================= */
 (function () {
   'use strict';
-  const { qs, qsa, icon, money, escapeHtml } = CS;
-  const root = qs('#cartRoot');
+  var qs = CS.qs, qsa = CS.qsa, icon = CS.icon, money = CS.money, escapeHtml = CS.escapeHtml;
+  var root = qs('#cartRoot');
 
   function render() {
-    const cartItems = CS.cart();
-    // Separar físicos y digitales
-    const physicalItems = [];
-    const digitalItems = [];
-    cartItems.forEach(i => {
-      if (i.type === 'digital') {
-        const dp = CS.digitalProductById(i.id);
-        if (dp) digitalItems.push({ dp, qty: i.qty });
-      } else {
-        const p = CS.productById(i.id);
-        if (p) physicalItems.push({ p, qty: i.qty });
-      }
+    var cartItems = CS.cart();
+    var items = [];
+    cartItems.forEach(function(i) {
+      // Buscar primero en productos digitales, luego en catálogo regular
+      var dp = CS.digitalProductById(i.id);
+      var p = dp || CS.productById(i.id);
+      if (p) items.push({ product: p, qty: i.qty, isDigital: !!dp, type: i.type || (dp ? 'digital' : 'regular') });
     });
 
-    const allEmpty = physicalItems.length === 0 && digitalItems.length === 0;
-
-    if (allEmpty) {
-      root.innerHTML = `
-        <div class="empty-state">
-          <div class="eico">${CS.ICONS.cart}</div>
-          <h3>Tu carrito está vacío</h3>
-          <p class="muted">Explora nuestro catálogo y encuentra productos premium para ti.</p>
-          <div class="gap-12 row mt-16" style="justify-content:center;flex-wrap:wrap">
-            <a href="catalog.html" class="btn btn-gold btn-lg">${icon('bag')} Ir a comprar</a>
-            <a href="digital.html" class="btn btn-outline btn-lg">${icon('chip')} Productos digitales</a>
-          </div>
-        </div>`;
+    if (!items.length) {
+      root.innerHTML = '<div class="empty-state"><div class="eico">' + CS.ICONS.cart + '</div><h3>Tu carrito está vacío</h3><p class="muted">Explora nuestro catálogo y encuentra lo que buscas.</p><div class="gap-12 row mt-16" style="justify-content:center;flex-wrap:wrap"><a href="catalog.html" class="btn btn-gold btn-lg">' + icon('bag') + ' Ver catálogo</a><a href="digital.html" class="btn btn-outline btn-lg">' + icon('chip') + ' Productos digitales</a></div></div>';
       renderReco();
       return;
     }
 
-    const t = CS.cartTotals();
-    const user = CS.currentUser();
-    const balance = user ? CS.walletBalance(user.email) : 0;
+    var user = CS.currentUser();
+    var balance = user ? CS.walletBalance(user.email) : 0;
+    var total = 0;
+    items.forEach(function(it) { total += it.product.price * it.qty; });
 
-    // Calcular total de digitales
-    const digitalTotal = digitalItems.reduce((s, { dp, qty }) => s + dp.price * qty, 0);
-    const physicalTotal = t.total - digitalTotal; // ajuste simple
+    var rows = items.map(function(it) {
+      var p = it.product;
+      var imgSrc = p.image || CS.productImg(p);
+      var stock = it.isDigital ? (p.items ? p.items.length : 0) : (p.stock || 0);
+      return '<div class="cart-row" data-id="' + p.id + '" style="border-left:3px solid var(--accent)">' +
+        '<div class="ci-media"><img src="' + imgSrc + '" alt="' + escapeHtml(p.name) + '" style="width:100%;height:100%;object-fit:cover"></div>' +
+        '<div>' +
+          '<span class="ci-cat" style="color:var(--accent)">DIGITAL · ' + escapeHtml(p.category || '') + '</span>' +
+          '<div class="ci-title">' + escapeHtml(p.name) + '</div>' +
+          '<div class="ci-price">' + money(p.price) + '</div>' +
+          '<span class="pc-stock" style="font-size:.72rem">' + stock + ' disponibles</span>' +
+          (p.duration ? '<span class="muted" style="font-size:.72rem;margin-left:8px">' + p.duration + ' días</span>' : '') +
+        '</div>' +
+        '<div class="ci-right">' +
+          '<div class="qty-stepper">' +
+            '<button data-dec="' + p.id + '" aria-label="Restar">−</button>' +
+            '<input type="text" value="' + it.qty + '" data-qty="' + p.id + '" inputmode="numeric" aria-label="Cantidad">' +
+            '<button data-inc="' + p.id + '" aria-label="Sumar">+</button>' +
+          '</div>' +
+          '<b style="font-family:var(--font-head)">' + money(p.price * it.qty) + '</b>' +
+          '<button class="ci-remove" data-rm="' + p.id + '">' + icon('trash') + ' Eliminar</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
 
-    // Filas de productos físicos
-    const physicalRows = physicalItems.map(({ p, qty }) => `
-      <div class="cart-row" data-id="${p.id}">
-        <a class="ci-media" href="product.html?id=${p.id}"><img src="${CS.productImg(p)}" alt="${escapeHtml(p.name)}"></a>
-        <div>
-          <span class="ci-cat">${escapeHtml(CS.categoryName(p.category))}</span>
-          <a href="product.html?id=${p.id}"><div class="ci-title">${escapeHtml(p.name)}</div></a>
-          <div class="ci-price">${money(p.price)}</div>
-          ${p.stock <= 5 ? '<span class="pc-stock low" style="font-size:.76rem">¡Quedan ' + p.stock + '!</span>' : ''}
-        </div>
-        <div class="ci-right">
-          <div class="qty-stepper">
-            <button data-dec="${p.id}" aria-label="Restar">−</button>
-            <input type="text" value="${qty}" data-qty="${p.id}" inputmode="numeric" aria-label="Cantidad">
-            <button data-inc="${p.id}" aria-label="Sumar">+</button>
-          </div>
-          <b style="font-family:var(--font-head)">${money(p.price * qty)}</b>
-          <button class="ci-remove" data-rm="${p.id}">${icon('trash')} Eliminar</button>
-        </div>
-      </div>`).join('');
+    root.innerHTML = '<div class="cart-layout"><div>' +
+      '<div class="between mb-16"><span class="muted">' + items.length + ' producto' + (items.length !== 1 ? 's' : '') + ' en tu carrito</span><button class="ci-remove" id="clearAll">' + icon('trash') + ' Vaciar</button></div>' +
+      '<div class="cart-items">' + rows + '</div>' +
+      '<a href="catalog.html" class="link-more mt-24" style="display:inline-flex">' + icon('chevL') + ' Seguir comprando</a>' +
+    '</div>' +
+    '<aside class="summary">' +
+      '<h3>Resumen del pedido</h3>' +
+      '<div class="sum-line"><span>Subtotal</span><span>' + money(total) + '</span></div>' +
+      '<div class="sum-line total"><span>Total</span><b>' + money(total) + '</b></div>' +
+      // Sección monedero
+      '<div style="border:1.5px solid var(--accent);border-radius:12px;padding:14px;margin-top:14px;background:rgba(201,162,39,.06)">' +
+        '<div class="between" style="margin-bottom:8px"><b style="font-size:.9rem">Pagar con monedero</b>' + (user ? '<span class="muted" style="font-size:.82rem">Saldo: ' + money(balance) + '</span>' : '') + '</div>' +
+        '<button class="btn btn-gold btn-block" id="payWallet" ' + (!user || balance < total ? 'disabled' : '') + '>' + icon('money') + ' Pagar ' + money(total) + ' con monedero</button>' +
+        (!user ? '<p class="muted text-center mt-8" style="font-size:.78rem"><a href="#" id="loginForWallet" class="gold-text">Inicia sesión</a> para pagar</p>' :
+         balance < total ? '<p class="muted text-center mt-8" style="font-size:.78rem;color:var(--danger)">Saldo insuficiente. Pide recarga al admin.</p>' :
+         '<p class="muted text-center mt-8" style="font-size:.78rem">Credenciales se envían a: <b>' + escapeHtml(user.email) + '</b></p>') +
+      '</div>' +
+      // WhatsApp alternativo
+      '<button class="btn btn-wa btn-block mt-12" id="sendWhatsApp" style="font-size:.95rem">' + icon('whatsapp') + ' Pedir por WhatsApp</button>' +
+      '<p class="muted text-center mt-16" style="font-size:.8rem">' + icon('shield') + ' Entrega inmediata · 30 días garantizado</p>' +
+    '</aside></div>' +
+    '<div id="walletResult" class="mt-24"></div>';
 
-    // Filas de productos digitales
-    const digitalRows = digitalItems.map(({ dp, qty }) => `
-      <div class="cart-row" data-id="${dp.id}" style="border-left:3px solid var(--accent)">
-        <div class="ci-media" style="display:grid;place-items:center;background:linear-gradient(135deg,var(--surface-2),var(--border))">
-          ${dp.image ? `<img src="${dp.image}" alt="" style="width:100%;height:100%;object-fit:cover">` : `<div style="font-size:1.8rem;opacity:.5">${CS.ICONS.chip}</div>`}
-        </div>
-        <div>
-          <span class="ci-cat" style="color:var(--accent)">DIGITAL · ${escapeHtml(dp.category)}</span>
-          <div class="ci-title">${escapeHtml(dp.name)}</div>
-          <div class="ci-price">${money(dp.price)}</div>
-          <span class="pc-stock" style="font-size:.72rem">${dp.items.length} disponibles</span>
-        </div>
-        <div class="ci-right">
-          <div class="qty-stepper">
-            <button data-dec-d="${dp.id}" aria-label="Restar">−</button>
-            <input type="text" value="${qty}" data-qty-d="${dp.id}" inputmode="numeric" aria-label="Cantidad">
-            <button data-inc-d="${dp.id}" aria-label="Sumar">+</button>
-          </div>
-          <b style="font-family:var(--font-head)">${money(dp.price * qty)}</b>
-          <button class="ci-remove" data-rm-d="${dp.id}">${icon('trash')} Eliminar</button>
-        </div>
-      </div>`).join('');
-
-    root.innerHTML = `
-      <div class="cart-layout">
-        <div>
-          <div class="between mb-16">
-            <span class="muted">${cartItems.length} producto${cartItems.length !== 1 ? 's' : ''} en tu carrito</span>
-            <button class="ci-remove" id="clearAll">${icon('trash')} Vaciar carrito</button>
-          </div>
-
-          ${physicalRows ? '<h4 class="mb-8" style="font-size:.9rem;color:var(--text-soft)">Productos físicos</h4><div class="cart-items mb-16">' + physicalRows + '</div>' : ''}
-          ${digitalRows ? '<h4 class="mb-8" style="font-size:.9rem;color:var(--accent)">Productos digitales</h4><div class="cart-items">' + digitalRows + '</div>' : ''}
-
-          <a href="catalog.html" class="link-more mt-24" style="display:inline-flex">${icon('chevL')} Seguir comprando</a>
-        </div>
-
-        <aside class="summary">
-          <h3>Resumen del pedido</h3>
-          ${renderCoupon(t)}
-          <div class="sum-line"><span>Subtotal</span><span>${money(t.subtotal)}</span></div>
-          ${t.discount > 0 ? `<div class="sum-line" style="color:var(--success)"><span>Descuento</span><span>-${money(t.discount)}</span></div>` : ''}
-          ${physicalItems.length > 0 ? `<div class="sum-line"><span>Envío</span><span>${t.shipping === 0 ? '<b style="color:var(--success)">Gratis</b>' : money(t.shipping)}</span></div>` : ''}
-          ${t.subtotal < 300000 && physicalItems.length > 0 ? `<div class="muted" style="font-size:.8rem">Agrega ${money(300000 - t.subtotal)} más para envío gratis 🚚</div>` : ''}
-          <div class="sum-line total"><span>Total</span><b>${money(t.total)}</b></div>
-
-          ${digitalItems.length > 0 ? `
-            <div style="border:1.5px solid var(--accent);border-radius:12px;padding:14px;margin-top:14px;background:rgba(201,162,39,.06)">
-              <div class="between" style="margin-bottom:8px"><b style="font-size:.9rem">Digitales: ${money(digitalTotal)}</b>${user ? '<span class="muted" style="font-size:.82rem">Saldo: ' + money(balance) + '</span>' : ''}</div>
-              <button class="btn btn-gold btn-block" id="payWallet" ${!user || balance < digitalTotal ? 'disabled' : ''}>
-                ${icon('money')} Pagar digitales con monedero
-              </button>
-              ${!user ? '<p class="muted text-center mt-8" style="font-size:.78rem"><a href="#" id="loginForWallet" class="gold-text">Inicia sesión</a> para pagar con monedero</p>' : balance < digitalTotal ? '<p class="muted text-center mt-8" style="font-size:.78rem;color:var(--danger)">Saldo insuficiente. Pide recarga al admin.</p>' : '<p class="muted text-center mt-8" style="font-size:.78rem">Los códigos se enviarán a: <b>' + escapeHtml(user.email) + '</b></p>'}
-            </div>` : ''}
-
-          ${physicalItems.length > 0 ? `
-            <button class="btn btn-wa btn-block btn-lg mt-16" id="sendWhatsApp" style="font-size:1.02rem">
-              ${icon('whatsapp')} Enviar Pedido por WhatsApp
-            </button>
-            <a href="checkout.html" class="btn btn-outline btn-block mt-8">${icon('check')} Finalizar compra</a>` : ''}
-
-          <p class="muted text-center mt-16" style="font-size:.8rem">${icon('shield')} Compra protegida · Datos seguros</p>
-        </aside>
-      </div>
-      <div id="walletResult" class="mt-24"></div>`;
-
-    wire();
+    wire(items, total);
     renderReco();
   }
 
-  function renderCoupon(t) {
-    if (t.coupon) {
-      return `<div class="coupon-applied">${icon('tag')} Cupón <b>${t.coupon.code}</b> aplicado · ${escapeHtml(t.coupon.label)}<button id="removeCoupon" style="margin-left:auto;color:var(--danger)">${CS.ICONS.close}</button></div>`;
-    }
-    return `
-      <div class="coupon-row">
-        <input class="input" id="couponInput" placeholder="Código de cupón" aria-label="Cupón">
-        <button class="btn btn-dark btn-sm" id="applyCoupon">Aplicar</button>
-      </div>
-      <p class="muted" style="font-size:.78rem;margin-bottom:8px">Prueba: <b>CEDRICK10</b>, <b>PREMIUM20</b> o <b>ENVIOGRATIS</b></p>`;
-  }
+  function wire(items, total) {
+    // Cantidades
+    qsa('[data-inc]').forEach(function(b) { b.addEventListener('click', function() {
+      var c = CS.cart(); var it = c.find(function(x) { return x.id === b.dataset.inc; });
+      if (it) { it.qty++; CS.store.set(CS.KEY.cart, c); CS.emit('cart'); } render();
+    }); });
+    qsa('[data-dec]').forEach(function(b) { b.addEventListener('click', function() {
+      var c = CS.cart(); var idx = c.findIndex(function(x) { return x.id === b.dataset.dec; });
+      if (idx >= 0) { c[idx].qty--; if (c[idx].qty <= 0) c.splice(idx, 1); CS.store.set(CS.KEY.cart, c); CS.emit('cart'); } render();
+    }); });
+    qsa('[data-qty]').forEach(function(inp) { inp.addEventListener('change', function() {
+      var c = CS.cart(); var it = c.find(function(x) { return x.id === inp.dataset.qty; });
+      var v = parseInt(inp.value.replace(/\D/g, '')) || 1;
+      if (it) { if (v <= 0) { c = c.filter(function(x) { return x.id !== inp.dataset.qty; }); } else { it.qty = v; } CS.store.set(CS.KEY.cart, c); CS.emit('cart'); } render();
+    }); });
+    qsa('[data-rm]').forEach(function(b) { b.addEventListener('click', function() { CS.removeFromCart(b.dataset.rm); render(); }); });
 
-  function wire() {
-    // Productos físicos
-    qsa('[data-inc]').forEach(b => b.addEventListener('click', () => { const id = b.dataset.inc; const it = CS.cart().find(x => x.id === id); CS.updateQty(id, (it ? it.qty : 0) + 1); render(); }));
-    qsa('[data-dec]').forEach(b => b.addEventListener('click', () => { const id = b.dataset.dec; const it = CS.cart().find(x => x.id === id); CS.updateQty(id, (it ? it.qty : 0) - 1); render(); }));
-    qsa('[data-qty]').forEach(inp => inp.addEventListener('change', () => { const id = inp.dataset.qty; const v = parseInt(inp.value.replace(/\D/g, '')) || 1; CS.updateQty(id, v); render(); }));
-    qsa('[data-rm]').forEach(b => b.addEventListener('click', () => { CS.removeFromCart(b.dataset.rm); render(); }));
+    // Vaciar
+    var clearBtn = qs('#clearAll');
+    if (clearBtn) clearBtn.addEventListener('click', function() { if (confirm('¿Vaciar todo el carrito?')) { CS.clearCart(); render(); } });
 
-    // Productos digitales
-    qsa('[data-inc-d]').forEach(b => b.addEventListener('click', () => { updateDigitalQty(b.dataset.incD, 1); }));
-    qsa('[data-dec-d]').forEach(b => b.addEventListener('click', () => { updateDigitalQty(b.dataset.decD, -1); }));
-    qsa('[data-qty-d]').forEach(inp => inp.addEventListener('change', () => { setDigitalQty(inp.dataset.qtyD, parseInt(inp.value.replace(/\D/g, '')) || 1); }));
-    qsa('[data-rm-d]').forEach(b => b.addEventListener('click', () => { CS.removeFromCart(b.dataset.rmD); render(); }));
+    // Login
+    var loginBtn = qs('#loginForWallet');
+    if (loginBtn) loginBtn.addEventListener('click', function(e) { e.preventDefault(); CS.openAuth('login'); });
 
-    qs('#clearAll') && qs('#clearAll').addEventListener('click', () => { if (confirm('¿Vaciar todo el carrito?')) { CS.clearCart(); render(); } });
+    // WhatsApp
+    var waBtn = qs('#sendWhatsApp');
+    if (waBtn) waBtn.addEventListener('click', function() { var u = CS.currentUser(); CS.sendWhatsApp(u ? { name: u.name, phone: u.phone } : {}); });
 
-    // Cupón
-    const applyBtn = qs('#applyCoupon');
-    applyBtn && applyBtn.addEventListener('click', () => { if (CS.applyCoupon(qs('#couponInput').value)) render(); });
-    qs('#couponInput') && qs('#couponInput').addEventListener('keydown', e => { if (e.key === 'Enter') { if (CS.applyCoupon(e.target.value)) render(); } });
-    qs('#removeCoupon') && qs('#removeCoupon').addEventListener('click', () => { CS.removeCoupon(); render(); });
-
-    // WhatsApp (solo físicos)
-    qs('#sendWhatsApp') && qs('#sendWhatsApp').addEventListener('click', () => {
-      const u = CS.currentUser();
-      CS.sendWhatsApp(u ? { name: u.name, phone: u.phone } : {});
-    });
-
-    // Login para monedero
-    qs('#loginForWallet') && qs('#loginForWallet').addEventListener('click', e => { e.preventDefault(); CS.openAuth('login'); });
-
-    // Pagar digitales con monedero
-    qs('#payWallet') && qs('#payWallet').addEventListener('click', () => {
-      const user = CS.currentUser();
+    // Pagar con monedero
+    var payBtn = qs('#payWallet');
+    if (payBtn) payBtn.addEventListener('click', function() {
+      var user = CS.currentUser();
       if (!user) { CS.openAuth('login'); return; }
-      if (!confirm('¿Pagar los productos digitales con tu monedero? Los códigos se enviarán a ' + user.email)) return;
+      if (!confirm('¿Pagar ' + CS.money(total) + ' con tu monedero? Las credenciales se enviarán a ' + user.email)) return;
 
-      const result = CS.payDigitalWithWallet(user.email);
+      // Intentar pago digital primero (productos con inventario de códigos)
+      var result = CS.payDigitalWithWallet(user.email);
       if (result.ok) {
-        CS.toast('Pago exitoso', 'Códigos entregados a tu correo.', 'success');
-        showDigitalSuccess(result);
-        render();
+        CS.toast('Pago exitoso', 'Credenciales entregadas', 'success');
+        showSuccess(result);
+      } else if (result.error === 'No hay productos digitales en el carrito') {
+        // Si no hay digitales registrados en la BD de digitales, debitar manualmente
+        if (CS.walletBalance(user.email) < total) { CS.toast('Saldo insuficiente', '', 'error'); return; }
+        if (!CS.walletDebit(user.email, total, 'Compra desde carrito')) { CS.toast('Error al debitar', '', 'error'); return; }
+        var orderItems = items.map(function(it) { return { id: it.product.id, name: it.product.name, price: it.product.price, qty: it.qty }; });
+        var order = CS.createOrder({ type: 'digital', customer: { email: user.email, name: user.name }, items: orderItems, totals: { subtotal: total, discount: 0, shipping: 0, total: total }, status: 'done', userEmail: user.email });
+        CS.clearCart();
+        CS.toast('Pedido confirmado', 'Orden #' + order.id, 'success');
+        showOrderSuccess(order, user);
       } else {
         CS.toast('Error', result.error, 'error');
       }
+      render();
     });
   }
 
-  function updateDigitalQty(id, delta) {
-    let c = CS.cart();
-    const item = c.find(i => i.id === id && i.type === 'digital');
-    if (!item) return;
-    const dp = CS.digitalProductById(id);
-    const newQty = item.qty + delta;
-    if (newQty <= 0) { c = c.filter(i => !(i.id === id && i.type === 'digital')); }
-    else { item.qty = dp ? Math.min(newQty, dp.items.length) : newQty; }
-    CS.store.set(CS.KEY.cart, c); CS.emit('cart'); render();
+  function showSuccess(result) {
+    var el = qs('#walletResult'); if (!el) return;
+    var codesHtml = result.codes.map(function(c) {
+      return '<div class="cart-row" style="grid-template-columns:auto 1fr;border-left:3px solid var(--success)"><div style="font-size:1.5rem;color:var(--success)">' + CS.ICONS.check + '</div><div><b>' + escapeHtml(c.name) + '</b>' +
+        (c.duration ? '<span class="muted" style="margin-left:8px;font-size:.8rem">' + c.duration + ' días</span>' : '') +
+        '<code style="display:block;padding:8px 12px;background:var(--surface-2);border-radius:8px;font-size:1rem;font-weight:700;margin-top:6px;word-break:break-all;font-family:monospace">' + escapeHtml(c.code) + '</code></div></div>';
+    }).join('');
+    el.innerHTML = '<div class="panel" style="border:1.5px solid var(--success);background:rgba(24,165,88,.04)"><div class="text-center mb-16"><div class="eico" style="width:70px;height:70px;margin:0 auto 12px;background:rgba(24,165,88,.14);color:var(--success);border-radius:50%;display:grid;place-items:center">' + CS.ICONS.check + '</div><h3 style="color:var(--success)">Pago exitoso</h3><p class="muted">Credenciales enviadas a <b>' + escapeHtml(result.email) + '</b></p></div><h4 class="mb-8">Tus credenciales:</h4><div class="cart-items">' + codesHtml + '</div><p class="muted mt-16 text-center" style="font-size:.85rem">También en <a href="account.html#orders" class="gold-text">Mis pedidos</a>. Guárdalas en un lugar seguro.</p></div>';
+    el.scrollIntoView({ behavior: 'smooth' });
   }
 
-  function setDigitalQty(id, qty) {
-    let c = CS.cart();
-    const item = c.find(i => i.id === id && i.type === 'digital');
-    if (!item) return;
-    const dp = CS.digitalProductById(id);
-    if (qty <= 0) { c = c.filter(i => !(i.id === id && i.type === 'digital')); }
-    else { item.qty = dp ? Math.min(qty, dp.items.length) : qty; }
-    CS.store.set(CS.KEY.cart, c); CS.emit('cart'); render();
-  }
-
-  function showDigitalSuccess(result) {
-    const resEl = qs('#walletResult');
-    if (!resEl) return;
-    const codesHtml = result.codes.map(c => `
-      <div class="cart-row" style="grid-template-columns:auto 1fr;border-left:3px solid var(--success)">
-        <div style="font-size:1.5rem;color:var(--success)">${CS.ICONS.check}</div>
-        <div>
-          <b>${escapeHtml(c.name)}</b>
-          <code style="display:block;padding:8px 12px;background:var(--surface-2);border-radius:8px;font-size:1rem;font-weight:700;margin-top:6px;word-break:break-all;font-family:monospace">${escapeHtml(c.code)}</code>
-        </div>
-      </div>`).join('');
-
-    resEl.innerHTML = `
-      <div class="panel" style="border:1.5px solid var(--success);background:rgba(24,165,88,.04)">
-        <div class="text-center mb-16">
-          <div class="eico" style="width:70px;height:70px;margin:0 auto 12px;background:rgba(24,165,88,.14);color:var(--success);border-radius:50%;display:grid;place-items:center">${CS.ICONS.check}</div>
-          <h3 style="color:var(--success)">Pago exitoso</h3>
-          <p class="muted">Tus productos digitales están listos. Los datos fueron enviados a <b>${escapeHtml(result.email)}</b></p>
-        </div>
-        <h4 class="mb-8">Tus códigos:</h4>
-        <div class="cart-items">${codesHtml}</div>
-        <p class="muted mt-16 text-center" style="font-size:.85rem">También puedes verlos en <a href="account.html#orders" class="gold-text">Mis pedidos</a>. Guárdalos en un lugar seguro.</p>
-      </div>`;
-    resEl.scrollIntoView({ behavior: 'smooth' });
+  function showOrderSuccess(order, user) {
+    var el = qs('#walletResult'); if (!el) return;
+    el.innerHTML = '<div class="panel" style="border:1.5px solid var(--success);background:rgba(24,165,88,.04);text-align:center"><div class="eico" style="width:70px;height:70px;margin:0 auto 12px;background:rgba(24,165,88,.14);color:var(--success);border-radius:50%;display:grid;place-items:center">' + CS.ICONS.check + '</div><h3 style="color:var(--success)">Pedido confirmado</h3><p class="muted">Orden <b class="gold-text">#' + order.id + '</b></p><p class="muted mt-8">Se entregará a <b>' + escapeHtml(user.email) + '</b>. El admin te enviará las credenciales por WhatsApp o correo.</p><div class="gap-12 row flex-wrap mt-16" style="justify-content:center"><a href="account.html#orders" class="btn btn-outline">Ver mis pedidos</a><a href="catalog.html" class="btn btn-gold">Seguir comprando</a></div></div>';
+    el.scrollIntoView({ behavior: 'smooth' });
   }
 
   function renderReco() {
-    const sec = qs('#recoSection');
-    if (!sec) return;
-    const inCart = CS.cart().map(i => i.id);
-    const reco = CS.filterProducts({ sort: 'popular' }).filter(p => !inCart.includes(p.id)).slice(0, 4);
+    var sec = qs('#recoSection'); if (!sec) return;
+    var inCart = CS.cart().map(function(i) { return i.id; });
+    var reco = CS.filterProducts({ sort: 'popular' }).filter(function(p) { return !inCart.includes(p.id); }).slice(0, 4);
     if (!reco.length) { sec.hidden = true; return; }
     sec.hidden = false;
     CS.renderGrid(qs('#cartReco'), reco);

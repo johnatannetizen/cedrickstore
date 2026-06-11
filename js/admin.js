@@ -483,51 +483,65 @@
     </div>`;
   }
 
-  /* ================= BANNERS ================= */
+  /* ================= BANNERS (crear + editar + eliminar) ================= */
   function bannersView(c) {
     const list = CS.banners();
     c.innerHTML = `<div class="panel">
       <div class="between mb-16"><h3>Banners del home (${list.length})</h3><button class="btn btn-gold btn-sm" id="newBanner">${icon('plus')} Nuevo banner</button></div>
-      ${list.map((b, i) => `<div class="cart-row" style="grid-template-columns:1fr auto">
-        <div><b>${b.title.replace(/<[^>]+>/g, '')}</b><div class="muted" style="font-size:.85rem">${escapeHtml(b.eyebrow)} · CTA: ${escapeHtml(b.cta)}</div></div>
-        <button class="icon-btn" data-del-banner="${i}" style="width:34px;height:34px">${CS.ICONS.trash}</button>
+      ${list.map((b, i) => `<div class="cart-row" style="grid-template-columns:1fr auto auto">
+        <div><b>${(b.title || '').replace(/<[^>]+>/g, '')}</b><div class="muted" style="font-size:.85rem">${escapeHtml(b.eyebrow || '')} · CTA: ${escapeHtml(b.cta || '')} · Tono: ${escapeHtml(b.tone || 'dark')}</div></div>
+        <button class="icon-btn" data-edit-banner="${i}" title="Editar" style="width:34px;height:34px">${CS.ICONS.edit}</button>
+        <button class="icon-btn" data-del-banner="${i}" title="Eliminar" style="width:34px;height:34px">${CS.ICONS.trash}</button>
       </div>`).join('')}
     </div>`;
-    qs('#newBanner').addEventListener('click', () => {
-      openModal('Nuevo banner', `<form id="bannerForm">
-        <div class="field"><label>Eyebrow (texto superior)</label><input class="input" name="eyebrow" value="Nueva colección"></div>
-        <div class="field"><label>Título (puedes usar &lt;span&gt; para resaltar)</label><input class="input" name="title" value="Tu título <span>destacado</span>"></div>
-        <div class="field"><label>Texto</label><textarea class="textarea" name="text"></textarea></div>
-        <div class="form-grid">
-          <div class="field"><label>Texto del botón</label><input class="input" name="cta" value="Comprar ahora"></div>
-          <div class="field"><label>Enlace</label><input class="input" name="link" value="catalog.html"></div>
-          <div class="field"><label>Insignia</label><input class="input" name="badge" value="-30%"></div>
-          <div class="field"><label>Tono</label><select class="select" name="tone"><option value="gold">Dorado</option><option value="blue">Azul</option><option value="dark">Oscuro</option></select></div>
-        </div>
-        <div class="field">
-          <label>Imagen del banner (opcional)</label>
-          <div class="row gap-12" style="align-items:center">
-            <img id="bannerPreview" alt="" style="width:80px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:none">
-            <button type="button" class="btn btn-outline btn-sm" id="bannerImgUpload">${icon('image')} Subir imagen</button>
-            <input type="file" accept="image/*" id="bannerImgFile" hidden>
-          </div>
-        </div>
-        <button class="btn btn-gold btn-block">Crear banner</button>
-      </form>`, (body) => {
-        let bImg = '';
-        const bUp = CS.qs('#bannerImgUpload', body), bFile = CS.qs('#bannerImgFile', body);
-        bUp && bUp.addEventListener('click', () => bFile.click());
-        bFile && bFile.addEventListener('change', ev => readFileAsDataURL(ev.target.files[0], d => { bImg = d; const pv = CS.qs('#bannerPreview', body); pv.src = d; pv.style.display = 'block'; }));
-        qs('#bannerForm', body).addEventListener('submit', e => {
-          e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
-          const list = CS.banners(); list.push({ id: uid('b_'), eyebrow: d.eyebrow, title: d.title, text: d.text, cta: d.cta, link: d.link, badge: d.badge, tone: d.tone, icon: 'sparkle', image: bImg });
-          save.banners(list); CS.toast('Banner creado', '', 'success'); closeModal(); renderSection('banners');
-        });
-      });
-    });
+    qs('#newBanner').addEventListener('click', () => bannerForm(null));
+    qsa('[data-edit-banner]').forEach(b => b.addEventListener('click', () => bannerForm(+b.dataset.editBanner)));
     qsa('[data-del-banner]').forEach(b => b.addEventListener('click', () => {
+      if (!confirm('¿Eliminar este banner?')) return;
       save.banners(CS.banners().filter((_, i) => i !== +b.dataset.delBanner)); renderSection('banners');
     }));
+  }
+
+  function bannerForm(idx) {
+    const isEdit = idx !== null && idx !== undefined;
+    const b = isEdit ? CS.banners()[idx] : { eyebrow: 'Nueva colección', title: 'Tu título <span>destacado</span>', text: '', cta: 'Comprar ahora', link: 'catalog.html', badge: '-30%', tone: 'dark', icon: 'sparkle', image: '' };
+    openModal(isEdit ? 'Editar banner' : 'Nuevo banner', `<form id="bannerForm">
+      <div class="field"><label>Eyebrow (texto superior)</label><input class="input" name="eyebrow" value="${escapeHtml(b.eyebrow || '')}"></div>
+      <div class="field"><label>Título (usa &lt;span&gt; para resaltar palabras)</label><input class="input" name="title" value="${escapeHtml(b.title || '')}"></div>
+      <div class="field"><label>Texto descriptivo</label><textarea class="textarea" name="text">${escapeHtml(b.text || '')}</textarea></div>
+      <div class="form-grid">
+        <div class="field"><label>Texto del botón</label><input class="input" name="cta" value="${escapeHtml(b.cta || 'Comprar ahora')}"></div>
+        <div class="field"><label>Enlace del botón</label><input class="input" name="link" value="${escapeHtml(b.link || 'catalog.html')}"></div>
+        <div class="field"><label>Insignia (badge)</label><input class="input" name="badge" value="${escapeHtml(b.badge || '-30%')}"></div>
+        <div class="field"><label>Tono de fondo</label><select class="select" name="tone"><option value="gold" ${b.tone === 'gold' ? 'selected' : ''}>Dorado</option><option value="blue" ${b.tone === 'blue' ? 'selected' : ''}>Azul</option><option value="dark" ${b.tone === 'dark' ? 'selected' : ''}>Oscuro</option></select></div>
+      </div>
+      <div class="field">
+        <label>Imagen del banner (opcional)</label>
+        <div class="row gap-12" style="align-items:center">
+          <img id="bannerPreview" src="${b.image || ''}" alt="" style="width:80px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--border);${b.image ? '' : 'display:none'}">
+          <button type="button" class="btn btn-outline btn-sm" id="bannerImgUpload">${icon('image')} ${b.image ? 'Cambiar imagen' : 'Subir imagen'}</button>
+          ${b.image ? '<button type="button" class="btn btn-ghost btn-sm" id="bannerImgRemove">Quitar</button>' : ''}
+          <input type="file" accept="image/*" id="bannerImgFile" hidden>
+        </div>
+      </div>
+      <button class="btn btn-gold btn-block btn-lg">${isEdit ? 'Guardar cambios' : 'Crear banner'}</button>
+    </form>`, (body) => {
+      let bImg = b.image || '';
+      const bUp = CS.qs('#bannerImgUpload', body), bFile = CS.qs('#bannerImgFile', body);
+      bUp && bUp.addEventListener('click', () => bFile.click());
+      bFile && bFile.addEventListener('change', ev => readFileAsDataURL(ev.target.files[0], d => { bImg = d; const pv = CS.qs('#bannerPreview', body); pv.src = d; pv.style.display = 'block'; }));
+      const rmBtn = CS.qs('#bannerImgRemove', body);
+      rmBtn && rmBtn.addEventListener('click', () => { bImg = ''; const pv = CS.qs('#bannerPreview', body); pv.style.display = 'none'; });
+      qs('#bannerForm', body).addEventListener('submit', e => {
+        e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
+        const list = CS.banners();
+        const bannerData = { id: (isEdit && b.id) ? b.id : uid('b_'), eyebrow: d.eyebrow, title: d.title, text: d.text, cta: d.cta, link: d.link, badge: d.badge, tone: d.tone, icon: b.icon || 'sparkle', image: bImg };
+        if (isEdit) { list[idx] = bannerData; } else { list.push(bannerData); }
+        save.banners(list);
+        CS.toast(isEdit ? 'Banner actualizado' : 'Banner creado', '', 'success');
+        closeModal(); renderSection('banners');
+      });
+    });
   }
 
   /* ================= PROMOCIONES (cupones) ================= */
